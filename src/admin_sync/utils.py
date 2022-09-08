@@ -8,9 +8,6 @@ from pathlib import Path
 from typing import Iterable
 from urllib.parse import quote, unquote
 
-from admin_sync.compat import (disable_concurrency, reversion_create_revision,
-                               reversion_set_comment, reversion_set_user)
-from admin_sync.conf import config
 from django.conf import settings
 from django.core import signing
 from django.core.management import call_command
@@ -20,7 +17,9 @@ from django.http import HttpResponse
 from django.template import loader
 from django.urls.base import reverse
 
-from admin_sync.signals import admin_sync_data_fetched
+from .compat import (disable_concurrency, reversion_create_revision,
+                     reversion_set_comment, reversion_set_user,)
+from .conf import config
 
 signer = signing.TimestampSigner()
 
@@ -165,15 +164,14 @@ def render(
 
 class ForeignKeysCollector:
     def __init__(self, collect_related=True):
-        # self._visited = []
         self.data = None
         self.models = None
         self.cache = {}
+        self._visited = []
         self.collect_related = collect_related
         super().__init__()
 
     def get_related_for_field(self, obj, field):
-        related = []
         try:
             if field.related_name:
                 related_attr = getattr(obj, field.related_name)
@@ -184,9 +182,9 @@ class ForeignKeysCollector:
                 related = related_attr.all()
             else:
                 related = [related_attr]
-        except Exception as e:
-            raise
+        except Exception as e:  # pragma: no cover
             logger.exception(e)
+            raise
         return related
 
     def get_fields(self, obj):
@@ -205,28 +203,36 @@ class ForeignKeysCollector:
             linked.extend(info)
         return linked
 
+    def visit(self, objs):
+        added = []
+        for o in objs:
+            if o not in self._visited:
+                self._visited.append(o)
+                added.append(o)
+        return added
+
     def _collect(self, objs):
         objects = []
         for obj in objs:
-            if obj and obj not in objects:
+            if obj:
                 concrete_model = obj._meta.concrete_model
                 obj = concrete_model.objects.get(pk=obj.pk)
                 opts = obj._meta
-                if obj not in objects:
-                    # self._visited.append(obj)
+                if obj not in self._visited:
+                    self._visited.append(obj)
                     objects.append(obj)
                     if self.collect_related:
                         related = self.get_related_objects(obj)
-                        # self._visited.extend(related)
-                        objects.extend(related)
+                        objects.extend(self.visit(related))
                     for field in chain(opts.fields, opts.many_to_many):
                         if isinstance(field, ManyToManyField):
                             target = getattr(obj, field.name).all()
-                            objects.extend(self._collect(target))
+                            for o in target:
+                                objects.extend(self._collect([o]))
                         elif isinstance(field, ForeignKey):
                             target = getattr(obj, field.name)
                             objects.extend(self._collect([target]))
-        return list(set(objects))
+        return objects
 
     def collect(self, objs):
         self._visited = []

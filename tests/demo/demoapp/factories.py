@@ -1,10 +1,11 @@
 import factory.django
 
-from .models import Base, Detail, Tag
+from .models import Base, Detail, Tag, Extra
 
 
 class BaseFactory(factory.django.DjangoModelFactory):
     name = factory.Sequence(lambda n: "Base %03d" % n)
+    parent = factory.SubFactory("demoapp.factories.BaseFactory")
 
     class Meta:
         model = Base
@@ -27,6 +28,8 @@ class BaseFactory(factory.django.DjangoModelFactory):
 class DetailFactory(factory.django.DjangoModelFactory):
     base = factory.SubFactory(BaseFactory)
     name = factory.Sequence(lambda n: "Detail %03d" % n)
+    brother = factory.SubFactory("demoapp.factories.DetailFactory")
+    extra = factory.SubFactory("demoapp.factories.ExtraFactory")
 
     class Meta:
         model = Detail
@@ -38,4 +41,12 @@ class TagFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Tag
+        django_get_or_create = ('name',)
+
+
+class ExtraFactory(factory.django.DjangoModelFactory):
+    name = factory.Sequence(lambda n: "Extra %03d" % n)
+
+    class Meta:
+        model = Extra
         django_get_or_create = ('name',)

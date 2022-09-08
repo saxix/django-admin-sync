@@ -14,7 +14,11 @@ with open(init, 'rb') as f:
     version = str(ast.literal_eval(_version_re.search(
         f.read().decode('utf-8')).group(1)))
 
-requirements = ["django-admin-extra-buttons", "requests"]
+def read(*parts):
+    here = os.path.abspath(os.path.dirname(__file__))
+    return codecs.open(os.path.join(here, *parts), "r").read()
+
+requirements = ["django-admin-extra-buttons>=1.5.1", "requests"]
 constance_require = ["django-picklefield", "django-constance"]
 tests_require = [
     "black",
@@ -38,7 +42,7 @@ dev_require = [
     "django-smart-admin",
     "pdbpp",
 ]
-docs_require = []
+docs_require = read('docs/requirements.txt')
 
 setup(
     name='django-admin-sync',
@@ -57,7 +61,7 @@ setup(
     extras_require={
         'test': requirements + tests_require + constance_require,
         'dev': dev_require + tests_require,
-        'docs': dev_require + docs_require,
+        'docs': docs_require,
         'constance': constance_require,
     },
     zip_safe=False,

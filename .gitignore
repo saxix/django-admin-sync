@@ -6,6 +6,7 @@
 !.github
 !.isort.cfg
 !.flake8
+!.gitlab-ci.yml
 !.bumpversion.cfg
 !.readthedocs.yaml
 coverage.xml

@@ -85,22 +85,6 @@ def test_is_logged_to_remote(rf):
 #     assert get_remote_credentials(request) == {"username": "u", "password": "p"}
 
 
-def test_collector(db):
-    from demoapp.factories import DetailFactory
-    d = DetailFactory()
-    c = ForeignKeysCollector(False)
-    c.collect([d])
-    assert c.data == [d, d.base] + list(d.base.tags.all())
-
-
-def test_collector_traverse(db):
-    from demoapp.factories import DetailFactory
-    d = DetailFactory()
-    c = ForeignKeysCollector(True)
-    c.collect([d.base])
-    assert c.data == [d.base, d] + list(d.base.tags.all())
-
-
 def test_render(rf):
     request = rf.get("/")
     assert render(request, "admin/base.html", cookies={"a": 1})

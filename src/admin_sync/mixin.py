@@ -1,12 +1,12 @@
 import io
 import json
 import logging
+import requests
 from json import JSONDecodeError
+from requests.auth import HTTPBasicAuth
 from urllib.parse import quote_plus, unquote_plus
 
-import requests
-from admin_extra_buttons.decorators import button, view
-from admin_extra_buttons.mixins import ExtraButtonsMixin
+from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 from django.contrib import admin, messages
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
 from django.core import signing
@@ -14,16 +14,15 @@ from django.core.serializers import get_serializer
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls.base import reverse as local_reverse
 from django.views.decorators.csrf import csrf_exempt
-from requests.auth import HTTPBasicAuth
 
 from .conf import config
 from .forms import ProductionLoginForm
 from .perms import check_publish_permission, check_sync_permission
-from .signals import admin_sync_data_published, admin_sync_data_fetched, admin_sync_data_received
-from .utils import (SyncResopnse, collect_data, invalidate_cache, is_local,
-                    is_logged_to_remote, is_remote, loaddata_from_stream,
-                    remote_reverse, render, set_cookie, sign_prod_credentials,
-                    unwrap, wraps)
+from .signals import (admin_sync_data_fetched, admin_sync_data_published,
+                      admin_sync_data_received,)
+from .utils import (SyncResopnse, collect_data, is_local, is_logged_to_remote,
+                    is_remote, loaddata_from_stream, remote_reverse, render,
+                    set_cookie, sign_prod_credentials, unwrap, wraps,)
 
 logger = logging.getLogger(__name__)
 
