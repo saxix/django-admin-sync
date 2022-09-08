@@ -1,0 +1,10 @@
+{% extends "admin/admin_sync/_publish_base.html" %}
+{% block action-content %}
+<h1>{{ stdout.error }}{{ stdout.message }}</h1>
+{{ original }} has been successfully published to {{ server }}
+
+    <pre>
+{{ stdout.details }}
+</pre>
+    <a href="{{ prod_logout }}">Logout from remote</a>
+{% endblock %}

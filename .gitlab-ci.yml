@@ -1,0 +1,82 @@
+variables:
+  CI_DEBUG_TRACE: "false"
+
+stages:
+  - lint
+  - test
+
+pages:
+  stage: deploy
+  script:
+    - mkdocs build --strict --verbose
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+
+lint:
+  stage: lint
+  image: registry.gitlab.com/os4d/docker-builder:1.8
+  rules:
+    - changes:
+        - src/**/*.py
+        - tests/**/*.py
+        - pytest.ini
+        - tests/.coveragerc
+        - .flake8
+        - .gitlab-ci.yml
+  script:
+    - echo "run lint"
+    - |
+      flake8 src \
+            --exit-zero \
+            --format=html \
+            --htmldir flake8/ \
+            --statistics \
+            --tee
+  artifacts:
+    when: always
+    paths:
+      - flake8/
+    expire_in: 5 days
+
+
+test:
+  stage: test
+  image: python:3.9
+  rules:
+    - changes:
+        - src/**/*.py
+        - tests/**/*.py
+        - .flake8
+        - pytest.ini
+        - .gitlab-ci.yml
+  cache:
+    paths:
+      - ~/.cache/pip/
+  variables:
+    PYTHONPATH: "./src:./tests/demo"
+  parallel:
+    matrix:
+      - DJANGO: ["django>=3,<=4", "django>=4,<=5"]
+  script:
+    - pip install -e .[test] $DJANGO
+    - |
+      pytest tests/ \
+          --cov-report=term \
+          --cov-report xml:.reports/coverage.xml \
+          --cov-report html:.reports/coverage \
+          --junitxml=".reports/junit.xml" \
+          --create-db \
+  coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
+  artifacts:
+    when: always
+    reports:
+      junit: .reports/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: .reports/coverage.xml
+    paths:
+      - ./.reports
+    expire_in: 5 days
