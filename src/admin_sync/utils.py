@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import tempfile
+
 from itertools import chain
 from pathlib import Path
 from typing import Iterable
@@ -18,8 +19,8 @@ from django.template import loader
 from django.urls.base import reverse
 
 from .compat import (disable_concurrency, reversion_create_revision,
-                     reversion_set_comment, reversion_set_user,)
-from .conf import config
+                     reversion_set_comment, reversion_set_user, )
+from .conf import config, PROTOCOL_VERSION
 
 signer = signing.TimestampSigner()
 
@@ -43,11 +44,13 @@ def collect_data(reg: Iterable, collect_related) -> str:
     )
 
 
-class SyncResopnse(HttpResponse):
-    def __init__(self, content=b"", *args, **kwargs):
+class SyncResponse(HttpResponse):
+    def __init__(self, content=b"", headers=None, *args, **kwargs):
         data = wraps(json.dumps(content))
         kwargs.setdefault("content_type", "application/json")
-        super().__init__(data, *args, **kwargs)
+        if not headers:
+            headers = {"x-admin-sync": PROTOCOL_VERSION}
+        super().__init__(data, headers=headers, *args, **kwargs)
 
 
 def loaddata_from_stream(request, payload):
