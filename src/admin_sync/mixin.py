@@ -1,6 +1,7 @@
 import io
 import json
 import logging
+
 import requests
 from json import JSONDecodeError
 from requests.auth import HTTPBasicAuth
@@ -15,14 +16,15 @@ from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls.base import reverse as local_reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from .conf import config
+from .conf import config, PROTOCOL_VERSION
+from .exceptions import VersionMismatchError
 from .forms import ProductionLoginForm
 from .perms import check_publish_permission, check_sync_permission
 from .signals import (admin_sync_data_fetched, admin_sync_data_published,
                       admin_sync_data_received,)
-from .utils import (SyncResopnse, collect_data, is_local, is_logged_to_remote,
+from .utils import (SyncResponse, collect_data, is_local, is_logged_to_remote,
                     is_remote, loaddata_from_stream, remote_reverse, render,
-                    set_cookie, sign_prod_credentials, unwrap, wraps,)
+                    set_cookie, sign_prod_credentials, unwrap, wraps, )
 
 logger = logging.getLogger(__name__)
 
@@ -68,10 +70,14 @@ class BaseSyncMixin(ExtraButtonsMixin):
         if ret.status_code == 404:
             raise Http404(config.REMOTE_SERVER + url)
         try:
+            if ret.headers['x-admin-sync'] != PROTOCOL_VERSION:
+                raise VersionMismatchError("Remote site is using an incompatible protocol.")
             payload = unwrap(ret.content)
-        except JSONDecodeError as e:
+        except KeyError:
+            raise Exception("Remote server does not seem to be a Admin-Sync enabled site.")
+        except Exception as e:
             logger.exception(e)
-            raise Exception(ret)
+            raise Exception(f"{e}")
         return payload
 
 
@@ -199,10 +205,9 @@ class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
     def dumpdata_qs(self, request):
         try:
             data = []
-            # s = collect_data(self.get_queryset(request))
             s = self.get_sync_data(request, self.get_queryset(request))
             data.extend(json.loads(s))
-            return SyncResopnse(data)
+            return SyncResponse(data)
         except Exception as e:
             logger.exception(e)
             self.message_error_to_user(request, e)
@@ -252,7 +257,7 @@ class GetSingleFromRemoteMixin(CollectMixin, RemoteLogin):
             obj = self.model.objects.get_by_natural_key(*key.split("|"))
             s = self.get_sync_data(request, [obj])
             data.extend(json.loads(s))
-            return SyncResopnse(data)
+            return SyncResponse(data)
         except Exception as e:
             logger.exception(e)
             self.message_error_to_user(request, e)

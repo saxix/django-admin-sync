@@ -10,6 +10,7 @@ ADMIN_SYNC_CONFIG = getattr(
 
 logger = logging.getLogger(__name__)
 
+PROTOCOL_VERSION = "1.0"
 
 class Config:
     defaults = dict(
