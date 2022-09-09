@@ -57,6 +57,7 @@ test:
       - ~/.cache/pip/
   variables:
     PYTHONPATH: "./src:./tests/demo"
+    DJANGO_SETTINGS_MODULE: demoapp.settings
   parallel:
     matrix:
       - DJANGO: ["django>=3,<=4", "django>=4,<=5"]

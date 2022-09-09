@@ -17,7 +17,7 @@ develop:
 
 clean:
 	# cleaning
-	@rm -fr dist '~build' .pytest_cache .coverage src/admin_extra_buttons.egg-info
+	@rm -fr dist '~build' .pytest_cache .coverage src/admin_sync.egg-info
 	@find . -name __pycache__ -o -name .eggs | xargs rm -rf
 	@find . -name "*.py?" -o -name ".DS_Store" -o -name "*.orig" -o -name "*.min.min.js" -o -name "*.min.min.css" -prune | xargs rm -rf
 
@@ -35,8 +35,6 @@ release:
 	./setup.py sdist
 	twine upload dist/
 
-coverage:
-	tox -e d40-py39 -- --create-db --cov-report=xml --cov-report=term --junitxml=pytest.xml
 
 docs: .mkbuilddir
 	@sh docs/to_gif.sh docs/images

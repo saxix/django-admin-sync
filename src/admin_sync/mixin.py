@@ -1,9 +1,7 @@
 import io
 import json
 import logging
-
 import requests
-from json import JSONDecodeError
 from requests.auth import HTTPBasicAuth
 from urllib.parse import quote_plus, unquote_plus
 
@@ -16,7 +14,7 @@ from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls.base import reverse as local_reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from .conf import config, PROTOCOL_VERSION
+from .conf import PROTOCOL_VERSION, config
 from .exceptions import VersionMismatchError
 from .forms import ProductionLoginForm
 from .perms import check_publish_permission, check_sync_permission
@@ -24,7 +22,7 @@ from .signals import (admin_sync_data_fetched, admin_sync_data_published,
                       admin_sync_data_received,)
 from .utils import (SyncResponse, collect_data, is_local, is_logged_to_remote,
                     is_remote, loaddata_from_stream, remote_reverse, render,
-                    set_cookie, sign_prod_credentials, unwrap, wraps, )
+                    set_cookie, sign_prod_credentials, unwrap, wraps,)
 
 logger = logging.getLogger(__name__)
 

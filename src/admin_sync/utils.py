@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import tempfile
-
 from itertools import chain
 from pathlib import Path
 from typing import Iterable
@@ -19,8 +18,8 @@ from django.template import loader
 from django.urls.base import reverse
 
 from .compat import (disable_concurrency, reversion_create_revision,
-                     reversion_set_comment, reversion_set_user, )
-from .conf import config, PROTOCOL_VERSION
+                     reversion_set_comment, reversion_set_user,)
+from .conf import PROTOCOL_VERSION, config
 
 signer = signing.TimestampSigner()
 
