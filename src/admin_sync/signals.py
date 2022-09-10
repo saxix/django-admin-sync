@@ -1,4 +1,3 @@
-
 from django import dispatch
 
 admin_sync_data_published = dispatch.Signal()

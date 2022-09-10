@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 PROTOCOL_VERSION = "1.0"
 
+
 class Config:
     defaults = dict(
         ADMIN_SYNC_REMOTE_SERVER="http://localhost:8001",

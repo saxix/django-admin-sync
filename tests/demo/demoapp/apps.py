@@ -29,7 +29,10 @@ class Config(AppConfig):
 
 def create_sample_data(sender, **kwargs):
     from .factories import DetailFactory
-    DetailFactory.create_batch(10, base__parent__parent=None,
-                               brother__brother=None,
-                               brother__base__parent=None,
-                               )
+
+    DetailFactory.create_batch(
+        10,
+        base__parent__parent=None,
+        brother__brother=None,
+        brother__base__parent=None,
+    )

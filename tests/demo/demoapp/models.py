@@ -10,9 +10,9 @@ class Tag(models.Model):
 
 class Base(models.Model):
     name = models.CharField(max_length=10)
-    parent = models.ForeignKey("self", blank=True, null=True,
-                               related_name="childs",
-                               on_delete=models.CASCADE)
+    parent = models.ForeignKey(
+        "self", blank=True, null=True, related_name="childs", on_delete=models.CASCADE
+    )
     tags = models.ManyToManyField(Tag)
 
     def __str__(self):
@@ -25,10 +25,13 @@ class Extra(models.Model):
     def __str__(self):
         return self.name
 
+
 class Detail(models.Model):
     base = models.ForeignKey(Base, on_delete=models.CASCADE)
     name = models.CharField(max_length=10)
-    brother = models.OneToOneField("self", blank=True, null=True, on_delete=models.CASCADE)
+    brother = models.OneToOneField(
+        "self", blank=True, null=True, on_delete=models.CASCADE
+    )
     extra = models.OneToOneField(Extra, blank=True, null=True, on_delete=models.CASCADE)
 
     def __str__(self):

@@ -23,9 +23,12 @@ constance_require = ["django-picklefield", "django-constance"]
 tests_require = [
     "black",
     "django-concurrency",
+    "django-reversion",
+    "django-smart-admin",
     "django-webtest",
     "factory-boy",
-    "flake8",
+    "flake8<5",
+    "flake8-html",
     "freezegun",
     "isort",
     "pytest",
@@ -38,8 +41,6 @@ tests_require = [
 ]
 dev_require = [
     "django",
-    "django-reversion",
-    "django-smart-admin",
     "pdbpp",
 ]
 docs_require = read('docs/requirements.txt')
@@ -59,7 +60,7 @@ setup(
     install_requires=requirements,
     tests_require=tests_require,
     extras_require={
-        'test': requirements + tests_require + constance_require,
+        'test': tests_require + constance_require,
         'dev': dev_require + tests_require,
         'docs': docs_require,
         'constance': constance_require,

@@ -1,6 +1,7 @@
 .*
 ~*
 /build
+/dist
 !tests/.coveragerc
 !.gitignore
 !.github
@@ -14,6 +15,4 @@ pytest.xml
 *.py[co]
 *.egg-info
 *.sqlite
-dist/*
-docs/site
 *.sqlite3

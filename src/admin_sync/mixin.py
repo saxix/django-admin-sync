@@ -18,11 +18,25 @@ from .conf import PROTOCOL_VERSION, config
 from .exceptions import VersionMismatchError
 from .forms import ProductionLoginForm
 from .perms import check_publish_permission, check_sync_permission
-from .signals import (admin_sync_data_fetched, admin_sync_data_published,
-                      admin_sync_data_received,)
-from .utils import (SyncResponse, collect_data, is_local, is_logged_to_remote,
-                    is_remote, loaddata_from_stream, remote_reverse, render,
-                    set_cookie, sign_prod_credentials, unwrap, wraps,)
+from .signals import (
+    admin_sync_data_fetched,
+    admin_sync_data_published,
+    admin_sync_data_received,
+)
+from .utils import (
+    SyncResponse,
+    collect_data,
+    is_local,
+    is_logged_to_remote,
+    is_remote,
+    loaddata_from_stream,
+    remote_reverse,
+    render,
+    set_cookie,
+    sign_prod_credentials,
+    unwrap,
+    wraps,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -68,11 +82,15 @@ class BaseSyncMixin(ExtraButtonsMixin):
         if ret.status_code == 404:
             raise Http404(config.REMOTE_SERVER + url)
         try:
-            if ret.headers['x-admin-sync'] != PROTOCOL_VERSION:
-                raise VersionMismatchError("Remote site is using an incompatible protocol.")
+            if ret.headers["x-admin-sync"] != PROTOCOL_VERSION:
+                raise VersionMismatchError(
+                    "Remote site is using an incompatible protocol."
+                )
             payload = unwrap(ret.content)
         except KeyError:
-            raise Exception("Remote server does not seem to be a Admin-Sync enabled site.")
+            raise Exception(
+                "Remote server does not seem to be a Admin-Sync enabled site."
+            )
         except Exception as e:
             logger.exception(e)
             raise Exception(f"{e}")
@@ -266,7 +284,6 @@ class GetSingleFromRemoteMixin(CollectMixin, RemoteLogin):
 
 
 class PublishMixin(CollectMixin, BaseSyncMixin):
-
     def get_serializer(self, fmt):
         return get_serializer(fmt)()
 

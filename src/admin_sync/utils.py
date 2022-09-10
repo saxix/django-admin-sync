@@ -17,8 +17,12 @@ from django.http import HttpResponse
 from django.template import loader
 from django.urls.base import reverse
 
-from .compat import (disable_concurrency, reversion_create_revision,
-                     reversion_set_comment, reversion_set_user,)
+from .compat import (
+    disable_concurrency,
+    reversion_create_revision,
+    reversion_set_comment,
+    reversion_set_user,
+)
 from .conf import PROTOCOL_VERSION, config
 
 signer = signing.TimestampSigner()
@@ -143,13 +147,13 @@ def get_client_ip(request):
 
 
 def render(
-        request,
-        template_name,
-        context=None,
-        content_type=None,
-        status=None,
-        using=None,
-        cookies=None,
+    request,
+    template_name,
+    context=None,
+    content_type=None,
+    status=None,
+    using=None,
+    cookies=None,
 ):
     """
     Return a HttpResponse whose content is filled with the result of calling
