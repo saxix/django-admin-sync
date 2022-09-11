@@ -1,6 +1,9 @@
 import json
-
 import pytest as pytest
+from freezegun import freeze_time
+
+from django.http import HttpResponse
+
 from admin_sync.utils import (
     get_client_ip,
     is_logged_to_remote,
@@ -10,8 +13,6 @@ from admin_sync.utils import (
     unwrap,
     wraps,
 )
-from django.http import HttpResponse
-from freezegun import freeze_time
 
 DATA = (
     '{"data": "%5B%7B%22model%22%3A%20%22auth.user%22%2C%20%22fields%22%3A%20%7B%22'

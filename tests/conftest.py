@@ -1,7 +1,7 @@
 import os
+import pytest
 import re
 
-import pytest
 from django.test import Client
 
 

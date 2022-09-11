@@ -5,7 +5,6 @@ import requests
 from requests.auth import HTTPBasicAuth
 from urllib.parse import quote_plus, unquote_plus
 
-from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 from django.contrib import admin, messages
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
 from django.core import signing
@@ -13,6 +12,8 @@ from django.core.serializers import get_serializer
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls.base import reverse as local_reverse
 from django.views.decorators.csrf import csrf_exempt
+
+from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 
 from .conf import PROTOCOL_VERSION, config
 from .exceptions import VersionMismatchError

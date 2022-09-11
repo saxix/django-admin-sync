@@ -1,6 +1,6 @@
 import factory.django
 
-from .models import Base, Detail, Tag, Extra
+from .models import Base, Detail, Extra, Tag
 
 
 class BaseFactory(factory.django.DjangoModelFactory):

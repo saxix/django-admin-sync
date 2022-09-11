@@ -43,7 +43,8 @@ fullclean:
 
 lint:
 	@flake8 src/
-	@isort -c src/
+	@isort -c src/ tests/
+	@black src/ tests/ --exclude ~*
 
 
 docs: .mkbuilddir

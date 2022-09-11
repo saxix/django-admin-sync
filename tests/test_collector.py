@@ -25,7 +25,7 @@ def test_collector(db):
 
 
 def test_collector_traverse(db):
-    from demoapp.factories import DetailFactory, BaseFactory
+    from demoapp.factories import BaseFactory, DetailFactory
 
     b = BaseFactory(parent=None)
     d = DetailFactory(
@@ -40,7 +40,7 @@ def test_collector_traverse(db):
 
 
 def test_collector_common_parent(db):
-    from demoapp.factories import DetailFactory, BaseFactory
+    from demoapp.factories import BaseFactory, DetailFactory
 
     b = BaseFactory(parent=None)
     d1 = DetailFactory(base=b, extra=None, brother=None)
@@ -51,7 +51,7 @@ def test_collector_common_parent(db):
 
 
 def test_collector_o2o(db):
-    from demoapp.factories import DetailFactory, BaseFactory
+    from demoapp.factories import BaseFactory, DetailFactory
 
     b = BaseFactory(parent=None)
     d0 = DetailFactory(base=b, extra=None, brother=None)
