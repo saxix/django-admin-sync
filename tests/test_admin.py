@@ -53,7 +53,7 @@ def test_publish(django_app, admin_user, responses):
     responses.add(
         responses.POST,
         "http://remote/auth/user/check_login/",
-        '{"user": ""}',
+        '{"user": "' + admin_user.username + '"}',
         status=200,
     )
     responses.add(

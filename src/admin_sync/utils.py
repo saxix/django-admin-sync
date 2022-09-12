@@ -52,7 +52,7 @@ class SyncResponse(HttpResponse):
         data = wraps(json.dumps(content))
         kwargs.setdefault("content_type", "application/json")
         if not headers:
-            headers = {"x-admin-sync": PROTOCOL_VERSION}
+            headers = {config.RESPONSE_HEADER: PROTOCOL_VERSION}
         super().__init__(data, headers=headers, *args, **kwargs)
 
 
@@ -244,3 +244,13 @@ class ForeignKeysCollector:
         self._visited = []
         self.data = self._collect(objs)
         self.models = set([o.__class__ for o in self.data])
+
+
+def get_remote_credentials(request):
+    try:
+        credentials = signer.unsign_object(
+            request.COOKIES[config.CREDENTIALS_COOKIE]
+        )
+        return credentials
+    except (signing.BadSignature, KeyError):
+        return {"username": "", "password": ""}

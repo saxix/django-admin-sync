@@ -1,0 +1,26 @@
+{% extends "smart_admin/console.html" %}{% load static i18n %}
+{% block left %}
+<div id="changelist" class="project-versions">
+    <table>
+        <tr><th>Storage class</th><td>{{ config }}</td></tr>
+        {% for k,v in conf %}
+            <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+        {% endfor %}
+    </table>
+</div>
+    <table>
+        <tr><th>Logged in as</th><td>{{ credentials.username }}
+        {% if credentials.username %}
+            <a href=".?logout">Logout</a>
+        {% else %}
+            Not logged in
+        {% endif %}
+        </td></tr>
+    </table>
+{% endblock %}
+{% block buttons %}
+{{ block.super }}
+{% endblock %}
+{% block footer %}
+{{ block.super }}
+{% endblock %}

@@ -17,7 +17,6 @@ else:
     )
     DATABASE_NAME = os.environ.get("DATABASE_NAME", "admin_sync.sqlite3")
 
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
