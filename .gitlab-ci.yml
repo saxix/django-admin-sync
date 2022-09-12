@@ -4,6 +4,7 @@ variables:
 stages:
   - lint
   - test
+  - deploy
 
 pages:
   stage: deploy
