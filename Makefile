@@ -3,40 +3,49 @@ BUILDDIR=${PWD}/~build
 .mkbuilddir:
 	@mkdir -p ${BUILDDIR}
 
+define BROWSER_PYSCRIPT
+import os, webbrowser, sys
+
+from urllib.request import pathname2url
+
+webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
+endef
+export BROWSER_PYSCRIPT
+
+define PRINT_HELP_PYSCRIPT
+import re, sys
+
+for line in sys.stdin:
+	match = re.match(r'^([a-zA-Z0-9_-]+):.*?## (.*)$$', line)
+	if match:
+		target, help = match.groups()
+		print("%-20s %s" % (target, help))
+endef
+export PRINT_HELP_PYSCRIPT
+
+BROWSER := python -c "$$BROWSER_PYSCRIPT"
+
 help:
-	echo
+	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-demo:
-	cd tests && ./manage.py migrate
-	cd tests && ./manage.py runserver
-
-develop:
-	python3 -m venv .venv
-	.venv/bin/pip install -U pip setuptools
-	.venv/bin/pip install -e .[dev,test,docs]
 
 clean:
 	# cleaning
-	@rm -fr dist '~build' .pytest_cache .coverage src/admin_extra_buttons.egg-info
+	@rm -fr dist '~build' .pytest_cache .coverage src/admin_sync.egg-info
 	@find . -name __pycache__ -o -name .eggs | xargs rm -rf
 	@find . -name "*.py?" -o -name ".DS_Store" -o -name "*.orig" -o -name "*.min.min.js" -o -name "*.min.min.css" -prune | xargs rm -rf
+
 
 fullclean:
 	@rm -rf .tox .cache
 	$(MAKE) clean
 
+
 lint:
 	@flake8 src/
-	@isort -c src/
+	@isort -c src/ tests/
+	@black src/ tests/ --exclude ~*
 
-release:
-	tox
-	rm -fr dist/
-	./setup.py sdist
-	twine upload dist/
-
-coverage:
-	tox -e d40-py39 -- --create-db --cov-report=xml --cov-report=term --junitxml=pytest.xml
 
 docs: .mkbuilddir
 	@sh docs/to_gif.sh docs/images

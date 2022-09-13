@@ -4,6 +4,7 @@ variables:
 stages:
   - lint
   - test
+  - deploy
 
 pages:
   stage: deploy
@@ -27,14 +28,7 @@ lint:
         - .flake8
         - .gitlab-ci.yml
   script:
-    - echo "run lint"
-    - |
-      flake8 src \
-            --exit-zero \
-            --format=html \
-            --htmldir flake8/ \
-            --statistics \
-            --tee
+    - tox -e lint
   artifacts:
     when: always
     paths:
@@ -57,18 +51,19 @@ test:
       - ~/.cache/pip/
   variables:
     PYTHONPATH: "./src:./tests/demo"
+    DJANGO_SETTINGS_MODULE: demoapp.settings
   parallel:
     matrix:
-      - DJANGO: ["django>=3,<=4", "django>=4,<=5"]
+      - DJANGO: ["django>=3,<=4",
+                 "django>=4,<=5"]
   script:
-    - pip install -e .[test] $DJANGO
-    - |
-      pytest tests/ \
-          --cov-report=term \
-          --cov-report xml:.reports/coverage.xml \
-          --cov-report html:.reports/coverage \
-          --junitxml=".reports/junit.xml" \
-          --create-db \
+    - pip install -e .[test] $DJANGO django-reversion django-concurrency django-smart-admin
+    - pytest tests/
+      --cov-report=term
+      --cov-report xml:.reports/coverage.xml
+      --cov-report html:.reports/coverage
+      --junitxml=".reports/junit.xml"
+      --create-db
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
   artifacts:
     when: always

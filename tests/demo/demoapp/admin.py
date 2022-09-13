@@ -1,7 +1,9 @@
-from admin_sync.mixin import SyncMixin, SyncModelAdmin
+from reversion.admin import VersionAdmin
+
 from django.contrib.admin import site
 from django.contrib.auth.admin import UserAdmin
-from reversion.admin import VersionAdmin
+
+from admin_sync.mixin import SyncMixin, SyncModelAdmin
 
 from .models import Base, Detail, Tag
 

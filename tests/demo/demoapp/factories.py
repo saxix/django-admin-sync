@@ -1,6 +1,6 @@
 import factory.django
 
-from .models import Base, Detail, Tag, Extra
+from .models import Base, Detail, Extra, Tag
 
 
 class BaseFactory(factory.django.DjangoModelFactory):
@@ -9,7 +9,7 @@ class BaseFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Base
-        django_get_or_create = ('name',)
+        django_get_or_create = ("name",)
 
     @factory.post_generation
     def tags(self, create, extracted, **kwargs):
@@ -33,7 +33,7 @@ class DetailFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Detail
-        django_get_or_create = ('name',)
+        django_get_or_create = ("name",)
 
 
 class TagFactory(factory.django.DjangoModelFactory):
@@ -41,7 +41,7 @@ class TagFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Tag
-        django_get_or_create = ('name',)
+        django_get_or_create = ("name",)
 
 
 class ExtraFactory(factory.django.DjangoModelFactory):
@@ -49,4 +49,4 @@ class ExtraFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Extra
-        django_get_or_create = ('name',)
+        django_get_or_create = ("name",)

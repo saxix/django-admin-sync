@@ -1,13 +1,12 @@
 import io
 import json
 import logging
+from json import JSONDecodeError
 
 import requests
-from json import JSONDecodeError
 from requests.auth import HTTPBasicAuth
 from urllib.parse import quote_plus, unquote_plus
 
-from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 from django.contrib import admin, messages
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
 from django.core import signing
@@ -15,16 +14,33 @@ from django.core.serializers import get_serializer
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls.base import reverse as local_reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.validators import ValidationError
 
-from .conf import config, PROTOCOL_VERSION
+from admin_extra_buttons.api import ExtraButtonsMixin, button, view
+
+from .conf import PROTOCOL_VERSION, config
 from .exceptions import VersionMismatchError
 from .forms import ProductionLoginForm
 from .perms import check_publish_permission, check_sync_permission
-from .signals import (admin_sync_data_fetched, admin_sync_data_published,
-                      admin_sync_data_received,)
-from .utils import (SyncResponse, collect_data, is_local, is_logged_to_remote,
-                    is_remote, loaddata_from_stream, remote_reverse, render,
-                    set_cookie, sign_prod_credentials, unwrap, wraps, )
+from .signals import (
+    admin_sync_data_fetched,
+    admin_sync_data_published,
+    admin_sync_data_received,
+)
+from .utils import (
+    SyncResponse,
+    collect_data,
+    is_local,
+    is_logged_to_remote,
+    is_remote,
+    loaddata_from_stream,
+    remote_reverse,
+    render,
+    set_cookie,
+    sign_prod_credentials,
+    unwrap,
+    wraps,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +48,10 @@ signer = signing.TimestampSigner()
 
 
 class BaseSyncMixin(ExtraButtonsMixin):
-    def get_remote_credentials(self, request):
-        try:
-            credentials = signer.unsign_object(
-                request.COOKIES[config.CREDENTIALS_COOKIE]
-            )
-            return credentials
-        except (signing.BadSignature, KeyError):
-            return {"username": "", "password": ""}
 
     def post_remote_data(self, request, url, data):
         auth = None
-        if credentials := self.get_remote_credentials(request):
+        if credentials := config.get_credentials(request):
             auth = HTTPBasicAuth(**credentials)
         ret = requests.post(url, data=data, auth=auth)
         if ret.status_code == 403:
@@ -62,7 +70,7 @@ class BaseSyncMixin(ExtraButtonsMixin):
             url = remote_reverse(admin_urlname(self.model._meta, urlname))
 
         auth = None
-        if credentials := self.get_remote_credentials(request):
+        if credentials := config.get_credentials(request):
             auth = HTTPBasicAuth(**credentials)
         ret = requests.get(url, auth=auth)
         if ret.status_code == 403:
@@ -70,14 +78,21 @@ class BaseSyncMixin(ExtraButtonsMixin):
         if ret.status_code == 404:
             raise Http404(config.REMOTE_SERVER + url)
         try:
-            if ret.headers['x-admin-sync'] != PROTOCOL_VERSION:
-                raise VersionMismatchError("Remote site is using an incompatible protocol.")
+            if config.RESPONSE_HEADER and ret.headers[config.RESPONSE_HEADER] != PROTOCOL_VERSION:
+                raise VersionMismatchError(
+                    "Remote site is using an incompatible protocol."
+                )
             payload = unwrap(ret.content)
+        except JSONDecodeError as e:
+            logger.exception(e)
+            raise Exception(ret.content)
         except KeyError:
-            raise Exception("Remote server does not seem to be a Admin-Sync enabled site.")
+            raise Exception(
+                "Remote server does not seem to be a Admin-Sync enabled site."
+            )
         except Exception as e:
             logger.exception(e)
-            raise Exception(f"{e}")
+            raise
         return payload
 
 
@@ -110,6 +125,9 @@ class RemoteLogin(BaseSyncMixin):
                 url = remote_reverse(admin_urlname(self.model._meta, "check_login"))
                 ret = requests.post(url, auth=basic)
                 if ret.status_code == 200:
+                    data = ret.json()
+                    if data["user"] != form.cleaned_data['username']:
+                        raise ValidationError("---")
                     cookies[config.CREDENTIALS_COOKIE] = sign_prod_credentials(
                         **form.cleaned_data
                     )
@@ -135,22 +153,24 @@ class RemoteLogin(BaseSyncMixin):
         else:
             form = ProductionLoginForm()
         context["form"] = form
-        context["login_url"] = remote_reverse(
-            admin_urlname(self.model._meta, "check_login")
-        )
         return render(
             request, "admin/admin_sync/login_prod.html", context, cookies=cookies
         )
 
     def get_common_context(self, request, pk=None, **kwargs):
         kwargs["server"] = config.REMOTE_SERVER
+        kwargs["remote_admin"] = remote_reverse("admin:index")
         kwargs["prod_logout"] = local_reverse(
             admin_urlname(self.model._meta, "remote_logout")
         )
-        kwargs["prod_credentials"] = self.get_remote_credentials(request)
+        kwargs["prod_credentials"] = config.get_credentials(request)
         kwargs["prod_login"] = local_reverse(
             admin_urlname(self.model._meta, "remote_login")
         )
+        kwargs["login_url"] = remote_reverse(
+            admin_urlname(self.model._meta, "check_login")
+        )
+
         return super().get_common_context(request, pk, **kwargs)
 
 
@@ -171,13 +191,17 @@ class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
         visible=is_local,
     )
     def get_qs_from_remote(self, request):
+        if not is_logged_to_remote(request):
+            url = local_reverse(admin_urlname(self.model._meta, "remote_login"))
+            return HttpResponseRedirect(f"{url}?from={quote_plus(request.path)}")
+
         context = self.get_common_context(
-            request, title="Load data from REMOTE", server=config.REMOTE_SERVER
-        )
+            request, title="Load data from REMOTE", server=config.REMOTE_SERVER,
+            remote_admin = remote_reverse(
+            admin_urlname(self.model._meta, "dumpdata_qs")
+        ))
         if request.method == "POST":
             try:
-                if not is_logged_to_remote(request):
-                    raise PermissionError
                 data = self.get_remote_data(request, "dumpdata_qs")
                 info = loaddata_from_stream(request, data)
                 context["stdout"] = {"details": info}
@@ -191,9 +215,6 @@ class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
                 logger.exception(e)
                 self.message_error_to_user(request, e)
         else:
-            if not is_logged_to_remote(request):
-                url = local_reverse(admin_urlname(self.model._meta, "remote_login"))
-                return HttpResponseRedirect(f"{url}?from={quote_plus(request.path)}")
             return render(request, "admin/admin_sync/get_data.html", context)
 
     @view(
@@ -268,7 +289,6 @@ class GetSingleFromRemoteMixin(CollectMixin, RemoteLogin):
 
 
 class PublishMixin(CollectMixin, BaseSyncMixin):
-
     def get_serializer(self, fmt):
         return get_serializer(fmt)()
 

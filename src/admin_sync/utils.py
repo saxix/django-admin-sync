@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import tempfile
-
 from itertools import chain
 from pathlib import Path
 from typing import Iterable
@@ -18,9 +17,13 @@ from django.http import HttpResponse
 from django.template import loader
 from django.urls.base import reverse
 
-from .compat import (disable_concurrency, reversion_create_revision,
-                     reversion_set_comment, reversion_set_user, )
-from .conf import config, PROTOCOL_VERSION
+from .compat import (
+    disable_concurrency,
+    reversion_create_revision,
+    reversion_set_comment,
+    reversion_set_user,
+)
+from .conf import PROTOCOL_VERSION, config
 
 signer = signing.TimestampSigner()
 
@@ -49,7 +52,7 @@ class SyncResponse(HttpResponse):
         data = wraps(json.dumps(content))
         kwargs.setdefault("content_type", "application/json")
         if not headers:
-            headers = {"x-admin-sync": PROTOCOL_VERSION}
+            headers = {config.RESPONSE_HEADER: PROTOCOL_VERSION}
         super().__init__(data, headers=headers, *args, **kwargs)
 
 
@@ -144,13 +147,13 @@ def get_client_ip(request):
 
 
 def render(
-        request,
-        template_name,
-        context=None,
-        content_type=None,
-        status=None,
-        using=None,
-        cookies=None,
+    request,
+    template_name,
+    context=None,
+    content_type=None,
+    status=None,
+    using=None,
+    cookies=None,
 ):
     """
     Return a HttpResponse whose content is filled with the result of calling
@@ -241,3 +244,13 @@ class ForeignKeysCollector:
         self._visited = []
         self.data = self._collect(objs)
         self.models = set([o.__class__ for o in self.data])
+
+
+def get_remote_credentials(request):
+    try:
+        credentials = signer.unsign_object(
+            request.COOKIES[config.CREDENTIALS_COOKIE]
+        )
+        return credentials
+    except (signing.BadSignature, KeyError):
+        return {"username": "", "password": ""}

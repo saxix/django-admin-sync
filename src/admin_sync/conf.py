@@ -1,7 +1,7 @@
 import logging
 
 from django.conf import settings
-from django.utils.functional import SimpleLazyObject
+from django.utils.functional import SimpleLazyObject, cached_property
 from django.utils.module_loading import import_string
 
 ADMIN_SYNC_CONFIG = getattr(
@@ -12,15 +12,17 @@ logger = logging.getLogger(__name__)
 
 PROTOCOL_VERSION = "1.0"
 
+
 class Config:
     defaults = dict(
-        ADMIN_SYNC_REMOTE_SERVER="http://localhost:8001",
-        ADMIN_SYNC_LOCAL_ADMIN_URL="/admin/",
-        ADMIN_SYNC_REMOTE_ADMIN_URL="/admin/",
-        ADMIN_SYNC_CREDENTIALS_COOKIE="admin_sync_token",
-        ADMIN_SYNC_GET_CREDENTIALS="admin_sync.utils.get_remote_credentials",
-        ADMIN_SYNC_CREDENTIALS_PROMPT=True,
-        ADMIN_SYNC_USE_REVERSION=True,
+        REMOTE_SERVER="http://localhost:8001",
+        LOCAL_ADMIN_URL="/admin/",
+        REMOTE_ADMIN_URL="/admin/",
+        CREDENTIALS_COOKIE="admin_sync_token",
+        CREDENTIALS_HOLDER="admin_sync.utils.get_remote_credentials",
+        CREDENTIALS_PROMPT=True,
+        USE_REVERSION=True,
+        RESPONSE_HEADER='x-admin-sync',
     )
     storage = None
 
@@ -30,50 +32,31 @@ class Config:
 
         setting_changed.connect(self.on_setting_changed)
 
+    def __iter__(self):
+        return iter([[k, getattr(self, k)] for k in self.defaults.keys()])
+
+    def __len__(self):
+        return len(self.defaults)
+
     def _get(self, key):
-        return getattr(self.storage, key, self.defaults.get(key, None))
+        if key in self.defaults.keys():
+            full_name = f"ADMIN_SYNC_{key}"
+            return getattr(self.storage, full_name, self.defaults.get(key, None))
 
-    def __getattr__(self, item):
-        if f"ADMIN_SYNC_{item}" in self.defaults.keys():
-            return self._get(f"ADMIN_SYNC_{item}")
-        raise ValueError(item)
+    def get_credentials(self, request):
+        f = import_string(self.CREDENTIALS_HOLDER)
+        return f(request)
 
-    # @cached_property
-    # def REMOTE_SERVER(self):
-    #     return self._get("ADMIN_SYNC_REMOTE_SERVER")
-    #
-    # @cached_property
-    # def LOCAL_ADMIN_URL(self):
-    #     return self._get("ADMIN_SYNC_LOCAL_ADMIN_URL")
-    #
-    # @cached_property
-    # def REMOTE_ADMIN_URL(self):
-    #     return self._get("ADMIN_SYNC_REMOTE_ADMIN_URL")
-    #
-    # @cached_property
-    # def CREDENTIALS_COOKIE(self):
-    #     return self._get("ADMIN_SYNC_CREDENTIALS_COOKIE")
-    #
-    # @cached_property
-    # def GET_CREDENTIALS(self):
-    #     return self._get("ADMIN_SYNC_GET_CREDENTIALS")
-    #
-    # @cached_property
-    # def CREDENTIALS_PROMPT(self):
-    #     return self._get("ADMIN_SYNC_CREDENTIALS_PROMPT")
+    def __getattr__(self, key):
+        if key in self.defaults.keys():
+            return self._get(key)
+        raise AttributeError(key)
 
     def on_setting_changed(self, **kwargs):
         self.invalidate()
 
     def invalidate(self):
-        for attr in [
-            "REMOTE_SERVER",
-            "CREDENTIALS_COOKIE",
-            "REMOTE_ADMIN_URL",
-            "LOCAL_ADMIN_URL",
-            "GET_CREDENTIALS",
-            "CREDENTIALS_PROMPT",
-        ]:
+        for attr in self.defaults.keys():
             try:
                 delattr(self, attr)
             except AttributeError:
@@ -82,6 +65,20 @@ class Config:
 
 class DjangoSettings(Config):
     storage = settings
+
+
+class DjangoConstance(DjangoSettings):
+    def _get(self, key):
+        if key in self.defaults.keys():
+            full_name = f"ADMIN_SYNC_{key}"
+            return getattr(self.storage, full_name,
+                           getattr(settings, full_name,
+                                   self.defaults.get(key, None)))
+
+    @cached_property
+    def storage(self):
+        import constance
+        return constance.config
 
 
 def get_config():

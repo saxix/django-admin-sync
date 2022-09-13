@@ -5,10 +5,12 @@ class Config(AppConfig):
     name = "demoapp"
 
     def ready(self):
-        from admin_sync.conf import config
+        from smart_admin.decorators import smart_register
+
         from django.contrib.auth.models import User, UserManager
         from django.db.models.signals import post_migrate
-        from smart_admin.decorators import smart_register
+
+        from admin_sync.conf import config
 
         from .admin import SyncUserAdmin
 
@@ -29,7 +31,10 @@ class Config(AppConfig):
 
 def create_sample_data(sender, **kwargs):
     from .factories import DetailFactory
-    DetailFactory.create_batch(10, base__parent__parent=None,
-                               brother__brother=None,
-                               brother__base__parent=None,
-                               )
+
+    DetailFactory.create_batch(
+        10,
+        base__parent__parent=None,
+        brother__brother=None,
+        brother__base__parent=None,
+    )
