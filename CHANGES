@@ -1,3 +1,8 @@
+0.3.0
+-----
+* allow configuration to get credentials
+
+
 0.2.0
 -----
 * add PROTOCOL suppport
