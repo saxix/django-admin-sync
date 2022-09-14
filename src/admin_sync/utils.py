@@ -12,11 +12,10 @@ from django.conf import settings
 from django.core import signing
 from django.core.management import call_command
 from django.core.serializers import get_serializer
-from django.db.models import ForeignKey, ManyToManyField
+from django.db.models import ForeignKey, ManyToManyField, OneToOneField, OneToOneRel
 from django.http import HttpResponse
 from django.template import loader
 from django.urls.base import reverse
-
 from .compat import (
     disable_concurrency,
     reversion_create_revision,
@@ -54,6 +53,9 @@ class SyncResponse(HttpResponse):
         if not headers:
             headers = {config.RESPONSE_HEADER: PROTOCOL_VERSION}
         super().__init__(data, headers=headers, *args, **kwargs)
+
+    def json(self):
+        return json.loads(unwrap(self.content))
 
 
 def loaddata_from_stream(request, payload):
@@ -171,8 +173,8 @@ def render(
 class ForeignKeysCollector:
     def __init__(self, collect_related=True):
         self.data = None
-        self.models = None
         self.cache = {}
+        self.models = set()
         self._visited = []
         self.collect_related = collect_related
         super().__init__()
@@ -181,6 +183,8 @@ class ForeignKeysCollector:
         try:
             if field.related_name:
                 related_attr = getattr(obj, field.related_name)
+            elif isinstance(field, (OneToOneField, OneToOneRel)):
+                related_attr = getattr(obj, field.name)
             else:
                 related_attr = getattr(obj, f"{field.name}_set")
 
@@ -188,6 +192,8 @@ class ForeignKeysCollector:
                 related = related_attr.all()
             else:
                 related = [related_attr]
+        except AttributeError as e:  # pragma: no cover
+            return []
         except Exception as e:  # pragma: no cover
             logger.exception(e)
             raise
@@ -224,6 +230,7 @@ class ForeignKeysCollector:
                 concrete_model = obj._meta.concrete_model
                 obj = concrete_model.objects.get(pk=obj.pk)
                 opts = obj._meta
+                self.get_fields(obj)
                 if obj not in self._visited:
                     self._visited.append(obj)
                     objects.append(obj)
@@ -241,16 +248,15 @@ class ForeignKeysCollector:
         return objects
 
     def collect(self, objs):
+        self.cache = {}
         self._visited = []
         self.data = self._collect(objs)
-        self.models = set([o.__class__ for o in self.data])
+        self.models = [o.__name__ for o in self.cache.keys()]
 
 
 def get_remote_credentials(request):
     try:
-        credentials = signer.unsign_object(
-            request.COOKIES[config.CREDENTIALS_COOKIE]
-        )
+        credentials = signer.unsign_object(request.COOKIES[config.CREDENTIALS_COOKIE])
         return credentials
     except (signing.BadSignature, KeyError):
         return {"username": "", "password": ""}

@@ -45,6 +45,7 @@ if DEBUG:
     AUTHENTICATION_BACKENDS = [
         "demoapp.backends.AnyUserBackend",
     ]
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 TEMPLATES = [
     {
@@ -70,9 +71,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.admin",
+    # "django.contrib.admin",
     "reversion",
     "concurrency",
+    "smart_admin.apps.SmartTemplateConfig",
+    "smart_admin.apps.SmartConfig",
     "admin_extra_buttons",
     "admin_sync",
     "demoapp.apps.Config",

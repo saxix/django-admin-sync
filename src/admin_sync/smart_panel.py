@@ -8,7 +8,7 @@ from .conf import ADMIN_SYNC_CONFIG, config
 def panel_admin_sync(admin_site, request):
     context = admin_site.each_context(request)
     credentials = config.get_credentials(request)
-    if 'logout' in request.GET:
+    if "logout" in request.GET:
         response = HttpResponseRedirect(".")
         response.delete_cookie(config.CREDENTIALS_COOKIE)
         return response
