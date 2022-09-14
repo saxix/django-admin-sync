@@ -9,7 +9,7 @@ from urllib.parse import quote_plus, unquote_plus
 
 from django.contrib import admin, messages
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
-from django.core import signing
+from django.core import signing, checks
 from django.core.serializers import get_serializer
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls.base import reverse as local_reverse
@@ -40,6 +40,7 @@ from .utils import (
     sign_prod_credentials,
     unwrap,
     wraps,
+    ForeignKeysCollector,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,6 @@ signer = signing.TimestampSigner()
 
 
 class BaseSyncMixin(ExtraButtonsMixin):
-
     def post_remote_data(self, request, url, data):
         auth = None
         if credentials := config.get_credentials(request):
@@ -78,7 +78,10 @@ class BaseSyncMixin(ExtraButtonsMixin):
         if ret.status_code == 404:
             raise Http404(config.REMOTE_SERVER + url)
         try:
-            if config.RESPONSE_HEADER and ret.headers[config.RESPONSE_HEADER] != PROTOCOL_VERSION:
+            if (
+                config.RESPONSE_HEADER
+                and ret.headers[config.RESPONSE_HEADER] != PROTOCOL_VERSION
+            ):
                 raise VersionMismatchError(
                     "Remote site is using an incompatible protocol."
                 )
@@ -126,7 +129,7 @@ class RemoteLogin(BaseSyncMixin):
                 ret = requests.post(url, auth=basic)
                 if ret.status_code == 200:
                     data = ret.json()
-                    if data["user"] != form.cleaned_data['username']:
+                    if data["user"] != form.cleaned_data["username"]:
                         raise ValidationError("---")
                     cookies[config.CREDENTIALS_COOKIE] = sign_prod_credentials(
                         **form.cleaned_data
@@ -177,9 +180,37 @@ class RemoteLogin(BaseSyncMixin):
 class CollectMixin:
     sync_collect_related = False
 
+    def check(self):
+        errors = []
+        if not hasattr(self.model, "natural_key"):
+            errors.append(
+                checks.Warning(
+                    f"{self.model} does not use natural_key",
+                    hint=f"Add 'natural_keys()` to {self.model} Model."
+                    "See https://docs.djangoproject.com/en/4.1/topics/serialization/#natural-keys",
+                    obj=self,
+                    id="admin-sync.E002",
+                )
+            )
+        return []
+
     def get_sync_data(self, request, source) -> str:
-        # return collect_data(self.get_queryset(request), self.sync_collect_related)
         return collect_data(source, self.sync_collect_related)
+
+    def admin_sync_show_inspaect(self):
+        return False
+
+    @button(
+        visible=lambda b: b.model_admin.admin_sync_show_inspaect(),
+        html_attrs={"style": "background-color:red"},
+    )
+    def admin_sync_inspect(self, request):
+        context = self.get_common_context(request, title="Sync Inspect")
+        collector = ForeignKeysCollector(False)
+        collector.collect(self.get_queryset(request))
+        context["collector"] = collector
+        return render(request, "admin/admin_sync/inspect.html", context)
+        # return JsonResponse(c.models, safe=False)
 
 
 class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
@@ -196,10 +227,11 @@ class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
             return HttpResponseRedirect(f"{url}?from={quote_plus(request.path)}")
 
         context = self.get_common_context(
-            request, title="Load data from REMOTE", server=config.REMOTE_SERVER,
-            remote_admin = remote_reverse(
-            admin_urlname(self.model._meta, "dumpdata_qs")
-        ))
+            request,
+            title="Load data from REMOTE",
+            server=config.REMOTE_SERVER,
+            remote_admin=remote_reverse(admin_urlname(self.model._meta, "dumpdata_qs")),
+        )
         if request.method == "POST":
             try:
                 data = self.get_remote_data(request, "dumpdata_qs")

@@ -16,13 +16,14 @@ PROTOCOL_VERSION = "1.0"
 class Config:
     defaults = dict(
         REMOTE_SERVER="http://localhost:8001",
+        DEBUG=settings.DEBUG,
         LOCAL_ADMIN_URL="/admin/",
         REMOTE_ADMIN_URL="/admin/",
         CREDENTIALS_COOKIE="admin_sync_token",
         CREDENTIALS_HOLDER="admin_sync.utils.get_remote_credentials",
         CREDENTIALS_PROMPT=True,
         USE_REVERSION=True,
-        RESPONSE_HEADER='x-admin-sync',
+        RESPONSE_HEADER="x-admin-sync",
     )
     storage = None
 
@@ -71,13 +72,16 @@ class DjangoConstance(DjangoSettings):
     def _get(self, key):
         if key in self.defaults.keys():
             full_name = f"ADMIN_SYNC_{key}"
-            return getattr(self.storage, full_name,
-                           getattr(settings, full_name,
-                                   self.defaults.get(key, None)))
+            return getattr(
+                self.storage,
+                full_name,
+                getattr(settings, full_name, self.defaults.get(key, None)),
+            )
 
     @cached_property
     def storage(self):
         import constance
+
         return constance.config
 
 
