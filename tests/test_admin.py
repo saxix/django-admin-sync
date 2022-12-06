@@ -34,7 +34,7 @@ def test_fetch(django_app, admin_user, monkeypatch, remote):
     res = res.forms[1].submit().follow()
     res = res.forms[1].submit()
     assert str(list(res.context["messages"])[0]) == "Success"
-    assert "stdout" in res.context
+    assert "result" in res.context
 
 
 def test_sync(django_app, admin_user, monkeypatch, remote):

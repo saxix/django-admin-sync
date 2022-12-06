@@ -1,3 +1,9 @@
+0.4.0
+-----
+* add inspect button
+* new Protocol for easier customization
+
+
 0.3.0
 -----
 * allow configuration to get credentials

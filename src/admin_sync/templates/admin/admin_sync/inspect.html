@@ -1,0 +1,19 @@
+{% extends "admin/admin_sync/_publish_base.html" %}
+{% block action-content %}
+    <h3>Models</h3>
+    <ul>
+        {% for m in collector.models %}
+            <li>{{ m }}</li>
+        {% endfor %}
+    </ul>
+    <h3>Data</h3>
+    <small>(Total Records: {{ collector.data|length }})</small>
+    <ul>
+        {% for r in collector.data|slice:"0:50"  %}
+            <li>{{ r }}</li>
+        {% endfor %}
+        {% if collector.data|length > 50 %}
+            <i>continue....</i>
+        {% endif %}
+    </ul>
+{% endblock %}
