@@ -101,7 +101,7 @@ def test_publish_remote_error(app, admin_user, monkeypatch):
 def test_receive(django_app, admin_user):
     url = reverse("admin:auth_user_receive")
     res = django_app.post(url, DATA, user=admin_user)
-    assert res.json == {"message": "Done", "details": ""}
+    assert res.json["message"] == "Done"
 
 
 def test_receive_error(django_app, admin_user):
@@ -110,5 +110,4 @@ def test_receive_error(django_app, admin_user):
     assert res.status_code == 400
     assert res.json == {
         "error": "Expecting value: line 1 column 1 (char 0)",
-        "details": "",
     }

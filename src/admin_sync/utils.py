@@ -16,6 +16,7 @@ from django.db.models import ForeignKey, ManyToManyField, OneToOneField, OneToOn
 from django.http import HttpResponse
 from django.template import loader
 from django.urls.base import reverse
+
 from .compat import (
     disable_concurrency,
     reversion_create_revision,
@@ -247,11 +248,18 @@ class ForeignKeysCollector:
                             objects.extend(self._collect([target]))
         return objects
 
-    def collect(self, objs):
+    def add(self, objs, collect_related=None):
+        if collect_related is not None:
+            self.collect_related = collect_related
+        self.data += self._collect(objs)
+
+    def collect(self, objs, collect_related=None):
+        if collect_related is not None:
+            self.collect_related = collect_related
         self.cache = {}
         self._visited = []
         self.data = self._collect(objs)
-        self.models = [o.__name__ for o in self.cache.keys()]
+        # self.models = [o.__name__ for o in self.cache.keys()]
 
 
 def get_remote_credentials(request):
