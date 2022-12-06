@@ -1,20 +1,19 @@
 import io
 import json
 import logging
-from json import JSONDecodeError
-
 import requests
+from json import JSONDecodeError
 from requests.auth import HTTPBasicAuth
 from urllib.parse import quote_plus, unquote_plus
 
 from django.contrib import admin, messages
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
-from django.core import signing, checks
+from django.core import checks, signing
 from django.core.serializers import get_serializer
+from django.core.validators import ValidationError
 from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.urls.base import reverse as local_reverse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.validators import ValidationError
 
 from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 
@@ -22,25 +21,24 @@ from .conf import PROTOCOL_VERSION, config
 from .exceptions import VersionMismatchError
 from .forms import ProductionLoginForm
 from .perms import check_publish_permission, check_sync_permission
+from .protocol import BaseProtocol, LoadDumpProtocol
 from .signals import (
     admin_sync_data_fetched,
     admin_sync_data_published,
     admin_sync_data_received,
 )
 from .utils import (
+    ForeignKeysCollector,
     SyncResponse,
-    collect_data,
     is_local,
     is_logged_to_remote,
     is_remote,
-    loaddata_from_stream,
     remote_reverse,
     render,
     set_cookie,
     sign_prod_credentials,
     unwrap,
     wraps,
-    ForeignKeysCollector,
 )
 
 logger = logging.getLogger(__name__)
@@ -79,8 +77,8 @@ class BaseSyncMixin(ExtraButtonsMixin):
             raise Http404(config.REMOTE_SERVER + url)
         try:
             if (
-                config.RESPONSE_HEADER
-                and ret.headers[config.RESPONSE_HEADER] != PROTOCOL_VERSION
+                    config.RESPONSE_HEADER
+                    and ret.headers[config.RESPONSE_HEADER] != PROTOCOL_VERSION
             ):
                 raise VersionMismatchError(
                     "Remote site is using an incompatible protocol."
@@ -88,7 +86,7 @@ class BaseSyncMixin(ExtraButtonsMixin):
             payload = unwrap(ret.content)
         except JSONDecodeError as e:
             logger.exception(e)
-            raise Exception(ret.content)
+            raise Exception("%s: %s" % (ret.status_code, ret.content))
         except KeyError:
             raise Exception(
                 "Remote server does not seem to be a Admin-Sync enabled site."
@@ -124,35 +122,39 @@ class RemoteLogin(BaseSyncMixin):
         if request.method == "POST":
             form = ProductionLoginForm(data=request.POST)
             if form.is_valid():
-                basic = HTTPBasicAuth(**form.cleaned_data)
-                url = remote_reverse(admin_urlname(self.model._meta, "check_login"))
-                ret = requests.post(url, auth=basic)
-                if ret.status_code == 200:
-                    data = ret.json()
-                    if data["user"] != form.cleaned_data["username"]:
-                        raise ValidationError("---")
-                    cookies[config.CREDENTIALS_COOKIE] = sign_prod_credentials(
-                        **form.cleaned_data
-                    )
-                    data = ret.json()
-                    self.message_user(
-                        request,
-                        f"Logged in to {config.REMOTE_SERVER} as {data['user']}",
-                    )
-                    if "from" in request.GET:
-                        redir_url = request.build_absolute_uri(
-                            unquote_plus(request.GET["from"])
+                try:
+                    basic = HTTPBasicAuth(**form.cleaned_data)
+                    url = remote_reverse(admin_urlname(self.model._meta, "check_login"))
+                    ret = requests.post(url, auth=basic)
+                    if ret.status_code == 200:
+                        data = ret.json()
+                        if data["user"] != form.cleaned_data["username"]:
+                            raise ValidationError("---")
+                        cookies[config.CREDENTIALS_COOKIE] = sign_prod_credentials(
+                            **form.cleaned_data
                         )
-                        response = HttpResponseRedirect(redir_url)
-                        response.set_cookie(
-                            config.CREDENTIALS_COOKIE,
-                            cookies[config.CREDENTIALS_COOKIE],
+                        data = ret.json()
+                        self.message_user(
+                            request,
+                            f"Logged in to {config.REMOTE_SERVER} as {data['user']}",
                         )
-                        return response
-                else:
-                    self.message_user(
-                        request, f"Login failed {ret} - {url}", messages.ERROR
-                    )
+                        if "from" in request.GET:
+                            redir_url = request.build_absolute_uri(
+                                unquote_plus(request.GET["from"])
+                            )
+                            response = HttpResponseRedirect(redir_url)
+                            response.set_cookie(
+                                config.CREDENTIALS_COOKIE,
+                                cookies[config.CREDENTIALS_COOKIE],
+                            )
+                            return response
+                    else:
+                        self.message_user(
+                            request, f"Login failed {ret} - {url}", messages.ERROR
+                        )
+                except Exception as e:
+                    logger.exception(e)
+                    self.message_error_to_user(request, e)
         else:
             form = ProductionLoginForm()
         context["form"] = form
@@ -179,6 +181,7 @@ class RemoteLogin(BaseSyncMixin):
 
 class CollectMixin:
     sync_collect_related = False
+    protocol_class: BaseProtocol = LoadDumpProtocol
 
     def check(self):
         errors = []
@@ -187,7 +190,7 @@ class CollectMixin:
                 checks.Warning(
                     f"{self.model} does not use natural_key",
                     hint=f"Add 'natural_keys()` to {self.model} Model."
-                    "See https://docs.djangoproject.com/en/4.1/topics/serialization/#natural-keys",
+                         "See https://docs.djangoproject.com/en/4.1/topics/serialization/#natural-keys",
                     obj=self,
                     id="admin-sync.E002",
                 )
@@ -195,7 +198,8 @@ class CollectMixin:
         return []
 
     def get_sync_data(self, request, source) -> str:
-        return collect_data(source, self.sync_collect_related)
+        return self.protocol_class(request).serialize(source)
+        # return collect_data(source, self.sync_collect_related)
 
     def admin_sync_show_inspaect(self):
         return False
@@ -235,8 +239,8 @@ class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
         if request.method == "POST":
             try:
                 data = self.get_remote_data(request, "dumpdata_qs")
-                info = loaddata_from_stream(request, data)
-                context["stdout"] = {"details": info}
+                result = self.protocol_class(request).deserialize(data)
+                context["result"] = result
                 admin_sync_data_fetched.send(sender=self, data=data)
                 self.message_user(request, "Success", messages.SUCCESS)
                 return render(request, "admin/admin_sync/get_data_done.html", context)
@@ -280,7 +284,7 @@ class GetSingleFromRemoteMixin(CollectMixin, RemoteLogin):
                     raise PermissionError
                 obj = context["original"]
                 data = self.get_remote_data(request, "dumpdata_single", obj)
-                info = loaddata_from_stream(request, data)
+                info = self.protocol_class(request).deserialize(data)
                 context["stdout"] = {"details": info}
                 admin_sync_data_fetched.send(sender=self, data=data)
                 self.message_user(request, "Success", messages.SUCCESS)
@@ -356,7 +360,7 @@ class PublishMixin(CollectMixin, BaseSyncMixin):
         out = io.StringIO()
         try:
             data = unwrap(request.body.decode())
-            loaddata_from_stream(request, data)
+            data = self.protocol_class(request).deserialize(data)
             admin_sync_data_received.send(sender=self, data=data)
             return JsonResponse(
                 {
