@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 
 from .conf import PROTOCOL_VERSION, config
-from .exceptions import VersionMismatchError
+from .exceptions import PublishError, VersionMismatchError
 from .forms import ProductionLoginForm
 from .perms import check_publish_permission, check_sync_permission
 from .protocol import BaseProtocol, LoadDumpProtocol
@@ -52,6 +52,8 @@ class BaseSyncMixin(ExtraButtonsMixin):
         if credentials := config.get_credentials(request):
             auth = HTTPBasicAuth(**credentials)
         ret = requests.post(url, data=data, auth=auth)
+        if ret.status_code == 400:
+            raise PublishError(ret)
         if ret.status_code == 403:
             raise PermissionError
         if ret.status_code == 404:
@@ -77,8 +79,8 @@ class BaseSyncMixin(ExtraButtonsMixin):
             raise Http404(config.REMOTE_SERVER + url)
         try:
             if (
-                    config.RESPONSE_HEADER
-                    and ret.headers[config.RESPONSE_HEADER] != PROTOCOL_VERSION
+                config.RESPONSE_HEADER
+                and ret.headers[config.RESPONSE_HEADER] != PROTOCOL_VERSION
             ):
                 raise VersionMismatchError(
                     "Remote site is using an incompatible protocol."
@@ -190,7 +192,7 @@ class CollectMixin:
                 checks.Warning(
                     f"{self.model} does not use natural_key",
                     hint=f"Add 'natural_keys()` to {self.model} Model."
-                         "See https://docs.djangoproject.com/en/4.1/topics/serialization/#natural-keys",
+                    "See https://docs.djangoproject.com/en/4.1/topics/serialization/#natural-keys",
                     obj=self,
                     id="admin-sync.E002",
                 )
@@ -346,6 +348,9 @@ class PublishMixin(CollectMixin, BaseSyncMixin):
             except PermissionError:
                 url = local_reverse(admin_urlname(self.model._meta, "remote_login"))
                 return HttpResponseRedirect(f"{url}?from={quote_plus(request.path)}")
+            except PublishError as e:
+                logger.exception(e)
+                self.message_error_to_user(request, f"{e}")
             except Exception as e:
                 logger.exception(e)
                 self.message_error_to_user(request, e)
@@ -357,24 +362,22 @@ class PublishMixin(CollectMixin, BaseSyncMixin):
 
     @view(decorators=[csrf_exempt], http_basic_auth=True)
     def receive(self, request):
-        out = io.StringIO()
         try:
-            data = unwrap(request.body.decode())
-            data = self.protocol_class(request).deserialize(data)
+            raw_data = unwrap(request.body.decode())
+            data = self.protocol_class(request).deserialize(raw_data)
             admin_sync_data_received.send(sender=self, data=data)
             return JsonResponse(
                 {
                     "message": "Done",
-                    "details": out.getvalue(),
+                    "details": data,
                 },
                 status=200,
             )
         except Exception as e:
-            logger.exception(e)
+            # logger.exception(e)
             return JsonResponse(
                 {
                     "error": str(e),
-                    "details": out.getvalue(),
                 },
                 status=400,
             )
