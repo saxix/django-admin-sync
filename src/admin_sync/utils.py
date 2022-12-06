@@ -37,13 +37,13 @@ def is_remote(request):
     return not is_local(request)
 
 
-def collect_data(reg: Iterable, collect_related) -> str:
-    c = ForeignKeysCollector(collect_related)
-    c.collect(reg)
-    json = get_serializer("json")()
-    return json.serialize(
-        c.data, use_natural_foreign_keys=True, use_natural_primary_keys=True, indent=3
-    )
+# def collect_data(reg: Iterable, collect_related) -> str:
+#     c = ForeignKeysCollector(collect_related)
+#     c.collect(reg)
+#     json = get_serializer("json")()
+#     return json.serialize(
+#         c.data, use_natural_foreign_keys=True, use_natural_primary_keys=True, indent=3
+#     )
 
 
 class SyncResponse(HttpResponse):
@@ -58,27 +58,27 @@ class SyncResponse(HttpResponse):
         return json.loads(unwrap(self.content))
 
 
-def loaddata_from_stream(request, payload):
-    workdir = Path(".").absolute()
-    remote_ip = get_client_ip(request)
-    kwargs = {
-        "dir": workdir,
-        "prefix": "~LOADDATA",
-        "suffix": ".json",
-        "delete": False,
-    }
-    with tempfile.NamedTemporaryFile(**kwargs) as fdst:
-        assert isinstance(fdst.write, object)
-        fdst.write(payload.encode())
-        fixture = (workdir / fdst.name).absolute()
-    with disable_concurrency():
-        with reversion_create_revision():
-            reversion_set_user(request.user)
-            reversion_set_comment(f"loaddata from {remote_ip}")
-            out = io.StringIO()
-            call_command("loaddata", fixture, stdout=out, verbosity=3)
-    Path(fixture).unlink()
-    return out.getvalue()
+# def loaddata_from_stream(request, payload):
+#     workdir = Path(".").absolute()
+#     remote_ip = get_client_ip(request)
+#     kwargs = {
+#         "dir": workdir,
+#         "prefix": "~LOADDATA",
+#         "suffix": ".json",
+#         "delete": False,
+#     }
+#     with tempfile.NamedTemporaryFile(**kwargs) as fdst:
+#         assert isinstance(fdst.write, object)
+#         fdst.write(payload.encode())
+#         fixture = (workdir / fdst.name).absolute()
+#     with disable_concurrency():
+#         with reversion_create_revision():
+#             reversion_set_user(request.user)
+#             reversion_set_comment(f"loaddata from {remote_ip}")
+#             out = io.StringIO()
+#             call_command("loaddata", fixture, stdout=out, verbosity=3)
+#     Path(fixture).unlink()
+#     return out.getvalue()
 
 
 def wraps(data: str) -> str:
