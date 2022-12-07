@@ -9,15 +9,20 @@ from django.core.serializers.json import (
     Deserializer as JsonDeserializer,
     Serializer as JsonSerializer,
 )
+from django.db import transaction, connections
 from django.http import HttpRequest
 
+from .collector import BaseCollector
 from .exceptions import ProtocolError
-from .utils import ForeignKeysCollector, get_client_ip
+from .collector import ForeignKeysCollector, BaseCollector
+from .utils import get_client_ip
 
 logger = logging.getLogger(__name__)
 
 
 class BaseProtocol(abc.ABC):
+    collector_class: BaseCollector = ForeignKeysCollector
+
     def __init__(self, request: Optional[HttpRequest] = None):
         self.request = request
 
@@ -29,6 +34,9 @@ class BaseProtocol(abc.ABC):
     def deserialize(self, request: HttpRequest):
         pass
 
+    @abc.abstractmethod
+    def collect(self, data):
+        pass
 
 class ReversionMixin:
     @reversion.create_revision()
@@ -37,43 +45,42 @@ class ReversionMixin:
 
 
 class LoadDumpProtocol(BaseProtocol):
-    def serialize(self, data: Iterable, collect_related=True):
-        c = ForeignKeysCollector(collect_related)
+    using = "default"
+    def collect(self, data):
+        c = self.collector_class(True)
         c.collect(data)
+        return c.data
+
+    def serialize(self, data: Iterable):
+        data = self.collect(data)
         json: JsonSerializer = get_serializer("json")()
         return json.serialize(
-            c.data,
+            data,
             use_natural_foreign_keys=True,
             use_natural_primary_keys=True,
             indent=3,
         )
 
     def deserialize(self, payload: str) -> list[list[Union[str, Any]]]:
+        processed = []
         try:
-            objects = JsonDeserializer(
-                payload,
-                ignorenonexistent=True,
-                handle_forward_references=True,
-            )
-            processed = []
-            for obj in objects:
-                if not obj.deferred_fields:
-                    try:
-                        obj.save()
-                    except:
-                        pass
-            objects = JsonDeserializer(
-                payload,
-                ignorenonexistent=True,
-                handle_forward_references=True,
-            )
-            for obj in objects:
-                processed.append(
-                    [obj.object._meta.object_name, str(obj.object.pk), str(obj.object)]
-                )
-                obj.save()
+            connection = connections[self.using]
+            with connection.constraint_checks_disabled():
+                with transaction.atomic(self.using):
+                    objects = JsonDeserializer(
+                            payload,
+                            ignorenonexistent=True,
+                            handle_forward_references=True,
+                        )
+                    for obj in objects:
+                        obj.save(using=self.using)
+                        processed.append(
+                            [obj.object._meta.object_name, str(obj.object.pk), str(obj.object)]
+                        )
         except DeserializationError as e:
+            logger.exception(e)
             raise ProtocolError(e)
         except Exception as e:
-            raise ProtocolError(str(e))
+            logger.exception(e)
+            raise ProtocolError(e)
         return processed
