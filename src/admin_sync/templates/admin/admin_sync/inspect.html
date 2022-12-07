@@ -1,4 +1,4 @@
-{% extends "admin/admin_sync/_publish_base.html" %}
+{% extends "admin/admin_sync/_publish_base.html" %}{% load admin_sync admin_urls %}
 {% block action-content %}
     <h3>Models</h3>
     <ul>
@@ -7,13 +7,17 @@
         {% endfor %}
     </ul>
     <h3>Data</h3>
-    <small>(Total Records: {{ collector.data|length }})</small>
-    <ul>
-        {% for r in collector.data|slice:"0:50"  %}
-            <li>{{ r }}</li>
+    <small>(Total Records: {{ data|length }})</small>
+    <table>
+        {% for r in data|slice:"0:200"  %}
+            <tr>
+                <td>{{ r|classname }} </td>
+                <td>#{{ r.pk }} </td>
+                <td><a href="{{ r|admin_url:"change" }}">{{ r }}</a> </td>
+            </tr>
         {% endfor %}
-        {% if collector.data|length > 50 %}
-            <i>continue....</i>
-        {% endif %}
-    </ul>
+    </table>
+    {% if data|length > 200 %}
+        <i>continue....</i>
+    {% endif %}
 {% endblock %}

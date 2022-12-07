@@ -28,7 +28,6 @@ from .signals import (
     admin_sync_data_received,
 )
 from .utils import (
-    ForeignKeysCollector,
     SyncResponse,
     is_local,
     is_logged_to_remote,
@@ -203,20 +202,8 @@ class CollectMixin:
         return self.protocol_class(request).serialize(source)
         # return collect_data(source, self.sync_collect_related)
 
-    def admin_sync_show_inspaect(self):
+    def admin_sync_show_inspect(self):
         return False
-
-    @button(
-        visible=lambda b: b.model_admin.admin_sync_show_inspaect(),
-        html_attrs={"style": "background-color:red"},
-    )
-    def admin_sync_inspect(self, request):
-        context = self.get_common_context(request, title="Sync Inspect")
-        collector = ForeignKeysCollector(False)
-        collector.collect(self.get_queryset(request))
-        context["collector"] = collector
-        return render(request, "admin/admin_sync/inspect.html", context)
-        # return JsonResponse(c.models, safe=False)
 
 
 class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
@@ -389,6 +376,18 @@ class PublishMixin(CollectMixin, BaseSyncMixin):
 
     def check_publish_permission(self, request, obj=None):
         return request.user.is_staff
+
+    @button(
+        # visible=lambda b: b.model_admin.admin_sync_show_inspect(),
+        html_attrs={"style": "background-color:red"},
+    )
+    def admin_sync_inspect(self, request, pk):
+        context = self.get_common_context(request, title="Sync Inspect")
+        collector = self.protocol_class(request)
+        data = collector.collect([self.get_object(request, pk)])
+        context["data"] = data
+        return render(request, "admin/admin_sync/inspect.html", context)
+        # return JsonResponse(c.models, safe=False)
 
 
 class SyncMixin(GetManyFromRemoteMixin, GetSingleFromRemoteMixin, PublishMixin):

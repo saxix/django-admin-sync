@@ -1,4 +1,4 @@
-from admin_sync.utils import ForeignKeysCollector
+from admin_sync.collector import ForeignKeysCollector
 
 
 def test_collector(db):
