@@ -49,7 +49,7 @@ jobs:
                 run: python -m pip install tox
 
             -   name: Test with Tox
-                run: tox -e d${DJ_VER//.}-py${PY_VER//.}-${REV}-${CON} -- --create-db --cov-report=xml --cov-report=term --junitxml=pytest.xml
+                run: tox -e d${DJ_VER//.}-py${PY_VER//.}-${REV}-${CON} -- pytest tests -vv --create-db --cov-report=xml --cov-report=term --junitxml=pytest.xml
 
             -   uses: codecov/codecov-action@v1
                 with:
