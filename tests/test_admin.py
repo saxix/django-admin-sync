@@ -29,10 +29,14 @@ def test_fetch(app, admin_user, monkeypatch, remote):
     url = reverse("admin:auth_user_changelist")
     res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-get_qs_from_remote").follow()
-    res.forms[1]["username"] = admin_user.username
-    res.forms[1]["password"] = "password"
-    res = res.forms[1].submit().follow()
-    res = res.forms[1].submit()
+    frm = app.get_url_by_id(res, 'sync-remote-login')
+    frm["username"] = admin_user.username
+    frm["password"] = "password"
+    res = frm.submit().follow()
+
+    frm = app.get_url_by_id(res, "sync-remote-load")
+    res = frm.submit()
+
     assert (
         str(list(res.context["messages"])[0])
         == "Fetching data from http://remote/auth/user/dumpdata_qs/"
@@ -45,10 +49,14 @@ def test_sync(app, admin_user, monkeypatch, remote):
     url = reverse("admin:auth_user_change", args=[admin_user.pk])
     res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-sync").follow()
-    res.forms[1]["username"] = admin_user.username
-    res.forms[1]["password"] = "password"
-    res = res.forms[1].submit().follow()
-    res = res.forms[1].submit()
+    frm = app.get_url_by_id(res, 'sync-remote-login')
+    frm["username"] = admin_user.username
+    frm["password"] = "password"
+    res = frm.submit().follow()
+
+    frm = app.get_url_by_id(res, "sync-remote-fetch")
+    res = frm.submit()
+
     assert (
         str(list(res.context["messages"])[0])
         == "Fetching data from http://remote/auth/user/admin/dumpdata_single/"
@@ -71,10 +79,14 @@ def test_publish(app, admin_user, responses):
     url = reverse("admin:auth_user_change", args=[admin_user.pk])
     res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-publish").follow()
-    res.forms[1]["username"] = admin_user.username
-    res.forms[1]["password"] = "password"
-    res = res.forms[1].submit().follow()
-    res = res.forms[1].submit()
+    frm = app.get_url_by_id(res, 'sync-remote-login')
+    frm["username"] = admin_user.username
+    frm["password"] = "password"
+    res = frm.submit().follow()
+
+    frm = app.get_url_by_id(res, "sync-remote-publish")
+    res = frm.submit()
+
     assert str(list(res.context["messages"])[0]) == "Success"
 
 

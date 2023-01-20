@@ -84,7 +84,6 @@ class BaseSyncMixin(ExtraButtonsMixin):
             raise RemoteError("Received redirect to '%s'" % ret.headers["location"])
         ct = ret.headers.get("Content-Type", "")
         if "application/json" not in ct:
-            breakpoint()
             raise RemoteError("Received wrong Content-Type: '%s'" % ct)
         try:
             if (
@@ -154,10 +153,11 @@ class RemoteLogin(BaseSyncMixin):
                                 unquote_plus(request.GET["from"])
                             )
                             response = HttpResponseRedirect(redir_url)
-                            response.set_cookie(
-                                config.CREDENTIALS_COOKIE,
-                                cookies[config.CREDENTIALS_COOKIE],
-                            )
+                            if cookies[config.CREDENTIALS_COOKIE]:
+                                response.set_cookie(
+                                    config.CREDENTIALS_COOKIE,
+                                    cookies[config.CREDENTIALS_COOKIE],
+                                )
                             return response
                     else:
                         self.message_user(
