@@ -29,8 +29,8 @@ jobs:
             matrix:
                 python-version: [ "3.9", "3.10"]
                 django-version: [ "2.2", "3.2", "4.0", "4.1" ]
-                reversion: [ "reversion", ]
-                concurrency: [ "concurrency", ]
+                reversion: [ "reversion", "r"]
+                concurrency: [ "concurrency", "c"]
         env:
             PY_VER: ${{ matrix.python-version}}
             DJ_VER: ${{ matrix.django-version}}
