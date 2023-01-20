@@ -24,8 +24,10 @@ def remote(responses, settings):
         headers = {f"HTTP_{k.upper()}": v for k, v in request.headers.items()}
         ret = client.get(request.path_url, **headers)
         for k, v in ret.headers.items():
-            if k == 'Set-Cookie':
-                ret.headers[k] = v.replace(f" {settings.SESSION_COOKIE_NAME}=", " remote=")
+            if k == "Set-Cookie":
+                ret.headers[k] = v.replace(
+                    f" {settings.SESSION_COOKIE_NAME}=", " remote="
+                )
             else:
                 ret.headers[k] = v.replace("http://testserver", "http://remote")
         return ret.status_code, ret.headers, ret.content
@@ -35,8 +37,10 @@ def remote(responses, settings):
         headers = {f"HTTP_{k.upper()}": v for k, v in request.headers.items()}
         ret = client.post(request.path_url, **headers)
         for k, v in ret.headers.items():
-            if k == 'Set-Cookie':
-                ret.headers[k] = v.replace(f" {settings.SESSION_COOKIE_NAME}=", " remote=")
+            if k == "Set-Cookie":
+                ret.headers[k] = v.replace(
+                    f" {settings.SESSION_COOKIE_NAME}=", " remote="
+                )
             else:
                 ret.headers[k] = v.replace("http://testserver", "http://remote")
         return ret.status_code, ret.headers, ret.content

@@ -29,7 +29,7 @@ def test_fetch(app, admin_user, monkeypatch, remote):
     url = reverse("admin:auth_user_changelist")
     res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-get_qs_from_remote").follow()
-    frm = app.get_url_by_id(res, 'sync-remote-login')
+    frm = app.get_url_by_id(res, "sync-remote-login")
     frm["username"] = admin_user.username
     frm["password"] = "password"
     res = frm.submit().follow()
@@ -49,7 +49,7 @@ def test_sync(app, admin_user, monkeypatch, remote):
     url = reverse("admin:auth_user_change", args=[admin_user.pk])
     res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-sync").follow()
-    frm = app.get_url_by_id(res, 'sync-remote-login')
+    frm = app.get_url_by_id(res, "sync-remote-login")
     frm["username"] = admin_user.username
     frm["password"] = "password"
     res = frm.submit().follow()
@@ -79,7 +79,7 @@ def test_publish(app, admin_user, responses):
     url = reverse("admin:auth_user_change", args=[admin_user.pk])
     res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-publish").follow()
-    frm = app.get_url_by_id(res, 'sync-remote-login')
+    frm = app.get_url_by_id(res, "sync-remote-login")
     frm["username"] = admin_user.username
     frm["password"] = "password"
     res = frm.submit().follow()
