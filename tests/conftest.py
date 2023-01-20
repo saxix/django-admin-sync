@@ -38,4 +38,12 @@ def remote(responses):
 
 @pytest.fixture
 def app(django_app_factory):
-    return django_app_factory(csrf_checks=False)
+    def get_url_by_id(self, res, id):
+        for idx, frm in res.forms.items():
+            if frm.id == id:
+                return frm
+        return None
+
+    ret = django_app_factory(csrf_checks=False)
+    ret.get_url_by_id = get_url_by_id.__get__(ret)
+    return ret
