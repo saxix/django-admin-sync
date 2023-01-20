@@ -28,6 +28,7 @@ lint:
         - .flake8
         - .gitlab-ci.yml
   script:
+    - pip install tox
     - tox -e lint
   artifacts:
     when: always
