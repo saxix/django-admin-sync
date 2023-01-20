@@ -30,10 +30,10 @@ lint:
   script:
     - pip install tox
     - tox -e lint
-  artifacts:
-    when: always
-    paths:
-      - flake8/
+#  artifacts:
+#    when: always
+#    paths:
+#      - flake8/
     expire_in: 5 days
 
 
