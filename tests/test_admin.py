@@ -33,7 +33,8 @@ def test_fetch(django_app, admin_user, monkeypatch, remote):
     res.forms[1]["password"] = "password"
     res = res.forms[1].submit().follow()
     res = res.forms[1].submit()
-    assert str(list(res.context["messages"])[0]) == "Success"
+    assert str(list(res.context["messages"])[0]) == "Fetching data from http://remote/auth/user/dumpdata_qs/"
+    assert str(list(res.context["messages"])[1]) == "Success"
     assert "result" in res.context
 
 
@@ -45,7 +46,8 @@ def test_sync(django_app, admin_user, monkeypatch, remote):
     res.forms[1]["password"] = "password"
     res = res.forms[1].submit().follow()
     res = res.forms[1].submit()
-    assert str(list(res.context["messages"])[0]) == "Success"
+    assert str(list(res.context["messages"])[0]) == "Fetching data from http://remote/auth/user/admin/dumpdata_single/"
+    assert str(list(res.context["messages"])[1]) == "Success"
     assert "stdout" in res.context
 
 

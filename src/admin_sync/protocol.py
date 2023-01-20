@@ -1,7 +1,7 @@
 import abc
 import logging
 import reversion
-from typing import Any, Iterable, List, Optional, Union
+from typing import Any, Iterable, Optional, Union
 
 from django.core.serializers import get_serializer
 from django.core.serializers.base import DeserializationError
@@ -9,13 +9,11 @@ from django.core.serializers.json import (
     Deserializer as JsonDeserializer,
     Serializer as JsonSerializer,
 )
-from django.db import transaction, connections
+from django.db import connections, transaction
 from django.http import HttpRequest
 
-from .collector import BaseCollector
+from .collector import BaseCollector, ForeignKeysCollector
 from .exceptions import ProtocolError
-from .collector import ForeignKeysCollector, BaseCollector
-from .utils import get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +36,7 @@ class BaseProtocol(abc.ABC):
     def collect(self, data):
         pass
 
+
 class ReversionMixin:
     @reversion.create_revision()
     def deserialize(self, payload: str):
@@ -46,6 +45,7 @@ class ReversionMixin:
 
 class LoadDumpProtocol(BaseProtocol):
     using = "default"
+
     def collect(self, data):
         c = self.collector_class(True)
         c.collect(data)
@@ -68,14 +68,18 @@ class LoadDumpProtocol(BaseProtocol):
             with connection.constraint_checks_disabled():
                 with transaction.atomic(self.using):
                     objects = JsonDeserializer(
-                            payload,
-                            ignorenonexistent=True,
-                            handle_forward_references=True,
-                        )
+                        payload,
+                        ignorenonexistent=True,
+                        handle_forward_references=True,
+                    )
                     for obj in objects:
                         obj.save(using=self.using)
                         processed.append(
-                            [obj.object._meta.object_name, str(obj.object.pk), str(obj.object)]
+                            [
+                                obj.object._meta.object_name,
+                                str(obj.object.pk),
+                                str(obj.object),
+                            ]
                         )
         except DeserializationError as e:
             logger.exception(e)

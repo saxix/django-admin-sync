@@ -1,7 +1,7 @@
 import logging
 
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
-from django.template import Library, Node
+from django.template import Library
 from django.urls import reverse
 
 logger = logging.getLogger(__name__)

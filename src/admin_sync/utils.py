@@ -1,28 +1,14 @@
 import datetime
-import io
 import json
 import logging
-import tempfile
-from itertools import chain
-from pathlib import Path
-from typing import Iterable
 from urllib.parse import quote, unquote
 
 from django.conf import settings
 from django.core import signing
-from django.core.management import call_command
-from django.core.serializers import get_serializer
-from django.db.models import ForeignKey, ManyToManyField, OneToOneField, OneToOneRel
 from django.http import HttpResponse
 from django.template import loader
 from django.urls.base import reverse
 
-from .compat import (
-    disable_concurrency,
-    reversion_create_revision,
-    reversion_set_comment,
-    reversion_set_user,
-)
 from .conf import PROTOCOL_VERSION, config
 
 signer = signing.TimestampSigner()
@@ -45,6 +31,15 @@ def is_remote(request):
 #     return json.serialize(
 #         c.data, use_natural_foreign_keys=True, use_natural_primary_keys=True, indent=3
 #     )
+
+
+class SyncErrorResponse(HttpResponse):
+    def __init__(self, content=b"", headers=None, *args, **kwargs):
+        kwargs.setdefault("content_type", "plain/text")
+        kwargs.setdefault("status", 400)
+        if not headers:
+            headers = {config.RESPONSE_HEADER: PROTOCOL_VERSION}
+        super().__init__(content, headers=headers, *args, **kwargs)
 
 
 class SyncResponse(HttpResponse):

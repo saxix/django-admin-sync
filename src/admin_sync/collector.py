@@ -1,8 +1,8 @@
 import abc
+import logging
 from itertools import chain
 
-import logging
-from django.db.models import OneToOneField, OneToOneRel, ManyToManyField, ForeignKey
+from django.db.models import ForeignKey, ManyToManyField, OneToOneField, OneToOneRel
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,6 @@ class BaseCollector(abc.ABC):
 
 
 class ForeignKeysCollector(BaseCollector):
-
     def get_related_for_field(self, obj, field):
         try:
             if field.related_name:
@@ -40,7 +39,7 @@ class ForeignKeysCollector(BaseCollector):
                 related = related_attr.all()
             else:
                 related = [related_attr]
-        except AttributeError as e:  # pragma: no cover
+        except AttributeError:  # pragma: no cover
             return []
         except Exception as e:  # pragma: no cover
             logger.exception(e)
