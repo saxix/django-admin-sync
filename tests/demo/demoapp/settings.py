@@ -45,7 +45,7 @@ if DEBUG:
     AUTHENTICATION_BACKENDS = [
         "demoapp.backends.AnyUserBackend",
     ]
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 TEMPLATES = [
     {

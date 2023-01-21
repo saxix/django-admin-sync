@@ -4,7 +4,7 @@
         <h3> You are currently logged in as <pre>{{ prod_credentials.username }}</pre></h3>
         <a href="{{ prod_logout }}">Change user</a>
     {% else %}
-        <form method="post">
+        <form method="post" id="sync-remote-login">
             {% csrf_token %}
             <table>
                 {{ form }}

@@ -1,4 +1,3 @@
-import io
 import json
 import logging
 import requests
@@ -18,7 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 
 from .conf import PROTOCOL_VERSION, config
-from .exceptions import PublishError, VersionMismatchError
+from .exceptions import PublishError, RemoteError, VersionMismatchError
 from .forms import ProductionLoginForm
 from .perms import check_publish_permission, check_sync_permission
 from .protocol import BaseProtocol, LoadDumpProtocol
@@ -28,10 +27,13 @@ from .signals import (
     admin_sync_data_received,
 )
 from .utils import (
+    SyncErrorResponse,
     SyncResponse,
+    collect_data,
     is_local,
     is_logged_to_remote,
     is_remote,
+    loaddata_from_stream,
     remote_reverse,
     render,
     set_cookie,
@@ -67,15 +69,24 @@ class BaseSyncMixin(ExtraButtonsMixin):
             )
         else:
             url = remote_reverse(admin_urlname(self.model._meta, urlname))
-
+        self.message_user(request, "Fetching data from %s" % url, messages.WARNING)
         auth = None
         if credentials := config.get_credentials(request):
             auth = HTTPBasicAuth(**credentials)
-        ret = requests.get(url, auth=auth)
+        ret = requests.get(url, auth=auth, allow_redirects=False)
+        if ret.status_code == 400:
+            raise RemoteError(ret.content)
         if ret.status_code == 403:
             raise PermissionError
         if ret.status_code == 404:
             raise Http404(config.REMOTE_SERVER + url)
+        if ret.status_code == 500:
+            raise RemoteError(config.REMOTE_SERVER + url)
+        if ret.status_code == 302:
+            raise RemoteError("Received redirect to '%s'" % ret.headers["location"])
+        ct = ret.headers.get("Content-Type", "")
+        if "application/json" not in ct:
+            raise RemoteError("Received wrong Content-Type: '%s'" % ct)
         try:
             if (
                 config.RESPONSE_HEADER
@@ -144,10 +155,11 @@ class RemoteLogin(BaseSyncMixin):
                                 unquote_plus(request.GET["from"])
                             )
                             response = HttpResponseRedirect(redir_url)
-                            response.set_cookie(
-                                config.CREDENTIALS_COOKIE,
-                                cookies[config.CREDENTIALS_COOKIE],
-                            )
+                            if cookies[config.CREDENTIALS_COOKIE]:
+                                response.set_cookie(
+                                    config.CREDENTIALS_COOKIE,
+                                    cookies[config.CREDENTIALS_COOKIE],
+                                )
                             return response
                     else:
                         self.message_user(
@@ -159,6 +171,9 @@ class RemoteLogin(BaseSyncMixin):
         else:
             form = ProductionLoginForm()
         context["form"] = form
+        context["login_url"] = remote_reverse(
+            admin_urlname(self.model._meta, "check_login")
+        )
         return render(
             request, "admin/admin_sync/login_prod.html", context, cookies=cookies
         )
@@ -200,7 +215,6 @@ class CollectMixin:
 
     def get_sync_data(self, request, source) -> str:
         return self.protocol_class(request).serialize(source)
-        # return collect_data(source, self.sync_collect_related)
 
     def admin_sync_show_inspect(self):
         return False
@@ -257,7 +271,8 @@ class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
         except Exception as e:
             logger.exception(e)
             self.message_error_to_user(request, e)
-            return HttpResponseRedirect("..")
+            return SyncErrorResponse(str(e))
+            # return HttpResponseRedirect("..")
 
     def check_sync_permission(self, request, obj=None):
         return request.user.is_staff

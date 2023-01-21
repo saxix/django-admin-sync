@@ -1,3 +1,10 @@
+0.7.0
+-----
+* drop support django 2.x
+* fixes fetching multiple records
+* improves error handling and messages
+
+
 0.6.0
 -----
 * refactor Collector

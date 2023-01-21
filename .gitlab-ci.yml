@@ -28,12 +28,13 @@ lint:
         - .flake8
         - .gitlab-ci.yml
   script:
+    - pip install tox
     - tox -e lint
-  artifacts:
-    when: always
-    paths:
-      - flake8/
-    expire_in: 5 days
+#  artifacts:
+#    when: always
+#    paths:
+#      - flake8/
+#    expire_in: 5 days
 
 
 test:

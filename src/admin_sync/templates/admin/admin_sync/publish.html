@@ -15,7 +15,7 @@
             (<a href="{{ prod_logout }}?{{ request.path }}">Change user</a>)
         </div>
         <div style="margin-top:50px">
-            <form method="post">
+            <form method="post" id="sync-remote-publish">
                 {% csrf_token %}
                 <input class="default" type="submit" value="Publish">
                 <input type="button" value="Cancel" onclick="javascript:history.back()">

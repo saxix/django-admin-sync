@@ -25,31 +25,47 @@ DATA = (
 )
 
 
-def test_fetch(django_app, admin_user, monkeypatch, remote):
+def test_fetch(app, admin_user, monkeypatch, remote):
     url = reverse("admin:auth_user_changelist")
-    res = django_app.get(url, user=admin_user)
+    res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-get_qs_from_remote").follow()
-    res.forms[1]["username"] = admin_user.username
-    res.forms[1]["password"] = "password"
-    res = res.forms[1].submit().follow()
-    res = res.forms[1].submit()
-    assert str(list(res.context["messages"])[0]) == "Success"
+    frm = app.get_url_by_id(res, "sync-remote-login")
+    frm["username"] = admin_user.username
+    frm["password"] = "password"
+    res = frm.submit().follow()
+
+    frm = app.get_url_by_id(res, "sync-remote-load")
+    res = frm.submit()
+
+    assert (
+        str(list(res.context["messages"])[0])
+        == "Fetching data from http://remote/auth/user/dumpdata_qs/"
+    )
+    assert str(list(res.context["messages"])[1]) == "Success"
     assert "result" in res.context
 
 
-def test_sync(django_app, admin_user, monkeypatch, remote):
+def test_sync(app, admin_user, monkeypatch, remote):
     url = reverse("admin:auth_user_change", args=[admin_user.pk])
-    res = django_app.get(url, user=admin_user)
+    res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-sync").follow()
-    res.forms[1]["username"] = admin_user.username
-    res.forms[1]["password"] = "password"
-    res = res.forms[1].submit().follow()
-    res = res.forms[1].submit()
-    assert str(list(res.context["messages"])[0]) == "Success"
+    frm = app.get_url_by_id(res, "sync-remote-login")
+    frm["username"] = admin_user.username
+    frm["password"] = "password"
+    res = frm.submit().follow()
+
+    frm = app.get_url_by_id(res, "sync-remote-fetch")
+    res = frm.submit()
+
+    assert (
+        str(list(res.context["messages"])[0])
+        == "Fetching data from http://remote/auth/user/admin/dumpdata_single/"
+    )
+    assert str(list(res.context["messages"])[1]) == "Success"
     assert "stdout" in res.context
 
 
-def test_publish(django_app, admin_user, responses):
+def test_publish(app, admin_user, responses):
     responses.add(
         responses.POST,
         "http://remote/auth/user/check_login/",
@@ -61,12 +77,16 @@ def test_publish(django_app, admin_user, responses):
     )
 
     url = reverse("admin:auth_user_change", args=[admin_user.pk])
-    res = django_app.get(url, user=admin_user)
+    res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-publish").follow()
-    res.forms[1]["username"] = admin_user.username
-    res.forms[1]["password"] = "password"
-    res = res.forms[1].submit().follow()
-    res = res.forms[1].submit()
+    frm = app.get_url_by_id(res, "sync-remote-login")
+    frm["username"] = admin_user.username
+    frm["password"] = "password"
+    res = frm.submit().follow()
+
+    frm = app.get_url_by_id(res, "sync-remote-publish")
+    res = frm.submit()
+
     assert str(list(res.context["messages"])[0]) == "Success"
 
 
@@ -98,15 +118,15 @@ def test_publish_remote_error(app, admin_user, monkeypatch):
     assert str(list(res.context["messages"])[0]) == "Exception: General Exception"
 
 
-def test_receive(django_app, admin_user):
+def test_receive(app, admin_user):
     url = reverse("admin:auth_user_receive")
-    res = django_app.post(url, DATA, user=admin_user)
+    res = app.post(url, DATA, user=admin_user)
     assert res.json["message"] == "Done"
 
 
-def test_receive_error(django_app, admin_user):
+def test_receive_error(app, admin_user):
     url = reverse("admin:auth_user_receive")
-    res = django_app.post(url, "", user=admin_user, expect_errors=True)
+    res = app.post(url, "", user=admin_user, expect_errors=True)
     assert res.status_code == 400
     assert res.json == {
         "error": "Expecting value: line 1 column 1 (char 0)",
