@@ -29,11 +29,9 @@ from .signals import (
 from .utils import (
     SyncErrorResponse,
     SyncResponse,
-    collect_data,
     is_local,
     is_logged_to_remote,
     is_remote,
-    loaddata_from_stream,
     remote_reverse,
     render,
     set_cookie,

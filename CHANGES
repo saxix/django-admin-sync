@@ -1,3 +1,8 @@
+0.7.1
+-----
+* fixes package error
+
+
 0.7.0
 -----
 * drop support django 2.x
