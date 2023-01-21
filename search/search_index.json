@@ -1,0 +1,1 @@
+{"config":{"lang":["en"],"separator":"[\\s\\-]+","pipeline":["stopWordFilter"]},"docs":[{"location":"","title":"django-admin-sync","text":""},{"location":"#use-cases","title":"Use cases","text":"<ol> <li> <p>Publishing Content </p> </li> <li> <p>Fetching data</p> </li> </ol>"}]}
