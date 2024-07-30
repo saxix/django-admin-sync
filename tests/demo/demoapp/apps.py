@@ -5,12 +5,12 @@ class Config(AppConfig):
     name = "demoapp"
 
     def ready(self):
-        from django.contrib.admin import site
-        from django.contrib.auth.models import User, UserManager
-        from django.db.models.signals import post_migrate
+        from django.contrib.admin import site  # noqa: PLC0415
+        from django.contrib.auth.models import User, UserManager  # noqa: PLC0415
+        from django.db.models.signals import post_migrate  # noqa: PLC0415
 
-        from admin_sync.conf import config
-        from demoapp.admin import SyncUserAdmin
+        from admin_sync.conf import config  # noqa: PLC0415
+        from demoapp.admin import SyncUserAdmin  # noqa: PLC0415
 
         def uget_by_natural_key(self, username):
             return self.get(username=username)
@@ -29,7 +29,7 @@ class Config(AppConfig):
 
 
 def create_sample_data(sender, **kwargs):
-    from .factories import DetailFactory
+    from .factories import DetailFactory  # noqa: PLC0415
 
     DetailFactory.create_batch(
         10,
