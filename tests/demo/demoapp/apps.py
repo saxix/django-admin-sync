@@ -5,10 +5,9 @@ class Config(AppConfig):
     name = "demoapp"
 
     def ready(self):
-        from smart_admin.decorators import smart_register
-
         from django.contrib.auth.models import User, UserManager
         from django.db.models.signals import post_migrate
+        from smart_admin.decorators import smart_register
 
         from admin_sync.conf import config
 

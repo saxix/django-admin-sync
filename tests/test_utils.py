@@ -1,8 +1,8 @@
 import json
-import pytest as pytest
-from freezegun import freeze_time
 
+import pytest as pytest
 from django.http import HttpResponse
+from freezegun import freeze_time
 
 from admin_sync.utils import (
     get_client_ip,

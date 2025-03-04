@@ -12,9 +12,7 @@ if os.environ.get("ADMIN_SYNC_REMOTE"):
     DATABASE_NAME = os.environ.get("DATABASE_NAME", "admin_sync.sqlite3")
 else:
     SESSION_COOKIE_NAME = "local"
-    ADMIN_SYNC_REMOTE_SERVER = os.environ.get(
-        "ADMIN_SYNC_REMOTE_SERVER", "http://localhost:8001"
-    )
+    ADMIN_SYNC_REMOTE_SERVER = os.environ.get("ADMIN_SYNC_REMOTE_SERVER", "http://localhost:8001")
     DATABASE_NAME = os.environ.get("DATABASE_NAME", "admin_sync.sqlite3")
 
 DATABASES = {

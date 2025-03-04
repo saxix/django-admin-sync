@@ -37,10 +37,7 @@ def test_fetch(app, admin_user, monkeypatch, remote):
     frm = app.get_url_by_id(res, "sync-remote-load")
     res = frm.submit()
 
-    assert (
-        str(list(res.context["messages"])[0])
-        == "Fetching data from http://remote/auth/user/dumpdata_qs/"
-    )
+    assert str(list(res.context["messages"])[0]) == "Fetching data from http://remote/auth/user/dumpdata_qs/"
     assert str(list(res.context["messages"])[1]) == "Success"
     assert "result" in res.context
 
@@ -57,10 +54,7 @@ def test_sync(app, admin_user, monkeypatch, remote):
     frm = app.get_url_by_id(res, "sync-remote-fetch")
     res = frm.submit()
 
-    assert (
-        str(list(res.context["messages"])[0])
-        == "Fetching data from http://remote/auth/user/admin/dumpdata_single/"
-    )
+    assert str(list(res.context["messages"])[0]) == "Fetching data from http://remote/auth/user/admin/dumpdata_single/"
     assert str(list(res.context["messages"])[1]) == "Success"
     assert "stdout" in res.context
 
@@ -72,9 +66,7 @@ def test_publish(app, admin_user, responses):
         '{"user": "' + admin_user.username + '"}',
         status=200,
     )
-    responses.add(
-        responses.POST, "http://remote/auth/user/receive/", '{"user": ""}', status=200
-    )
+    responses.add(responses.POST, "http://remote/auth/user/receive/", '{"user": ""}', status=200)
 
     url = reverse("admin:auth_user_change", args=[admin_user.pk])
     res = app.get(url, user=admin_user)
@@ -94,22 +86,16 @@ def test_publish_no_auth(app, admin_user, monkeypatch):
     monkeypatch.setattr("admin_sync.mixin.is_logged_to_remote", lambda s: False)
     url = reverse("admin:auth_user_publish", args=[admin_user.pk])
     res = app.get(url, user=admin_user)
-    assert (
-        res["location"]
-        == "/auth/user/remote_login/?from=%2Fauth%2Fuser%2F1%2Fpublish%2F"
-    )
+    assert res["location"] == "/auth/user/remote_login/?from=%2Fauth%2Fuser%2F1%2Fpublish%2F"
 
     res = app.post(url, user=admin_user, expect_errors=True)
     assert res.status_code == 302
-    assert (
-        res["location"]
-        == "/auth/user/remote_login/?from=%2Fauth%2Fuser%2F1%2Fpublish%2F"
-    )
+    assert res["location"] == "/auth/user/remote_login/?from=%2Fauth%2Fuser%2F1%2Fpublish%2F"
 
 
 def test_publish_remote_error(app, admin_user, monkeypatch):
     def raise_(*a):
-        raise Exception("General Exception")
+        raise Exception("General Exception")  # noqa: TRY002
 
     monkeypatch.setattr("admin_sync.mixin.PublishMixin.post_data_to_remote", raise_)
     monkeypatch.setattr("admin_sync.mixin.is_logged_to_remote", lambda s: True)

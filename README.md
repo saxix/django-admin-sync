@@ -5,7 +5,7 @@ django-admin-sync
 ## Use cases
 
 
-1. Publishing Content 
+1. Publishing Content
 
 
-2. Fetching data 
+2. Fetching data

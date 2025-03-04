@@ -10,6 +10,8 @@
 !.gitlab-ci.yml
 !.bumpversion.cfg
 !.readthedocs.yaml
+!.pre-commit-config.yaml
+src/admin_sync/version.py
 coverage.xml
 pytest.xml
 *.py[co]

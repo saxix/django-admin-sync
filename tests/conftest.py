@@ -1,12 +1,18 @@
 import os
-import pytest
 import re
+import sys
+from pathlib import Path
 
+import pytest
 from django.test import Client
 
 
 def pytest_configure(config):
     os.environ["DEBUG"] = "False"
+    here = Path(__file__).parent
+    sys.path.insert(0, str(here / "demo"))
+    sys.path.insert(0, str(here.parent / "src"))
+    os.environ["DJANGO_SETTINGS_MODULE"] = "demo.settings"
 
 
 @pytest.fixture(autouse=True)
@@ -25,9 +31,7 @@ def remote(responses, settings):
         ret = client.get(request.path_url, **headers)
         for k, v in ret.headers.items():
             if k == "Set-Cookie":
-                ret.headers[k] = v.replace(
-                    f" {settings.SESSION_COOKIE_NAME}=", " remote="
-                )
+                ret.headers[k] = v.replace(f" {settings.SESSION_COOKIE_NAME}=", " remote=")
             else:
                 ret.headers[k] = v.replace("http://testserver", "http://remote")
         return ret.status_code, ret.headers, ret.content
@@ -38,9 +42,7 @@ def remote(responses, settings):
         ret = client.post(request.path_url, **headers)
         for k, v in ret.headers.items():
             if k == "Set-Cookie":
-                ret.headers[k] = v.replace(
-                    f" {settings.SESSION_COOKIE_NAME}=", " remote="
-                )
+                ret.headers[k] = v.replace(f" {settings.SESSION_COOKIE_NAME}=", " remote=")
             else:
                 ret.headers[k] = v.replace("http://testserver", "http://remote")
         return ret.status_code, ret.headers, ret.content
@@ -54,7 +56,7 @@ def remote(responses, settings):
 @pytest.fixture
 def app(django_app_factory):
     def get_url_by_id(self, res, id):
-        for idx, frm in res.forms.items():
+        for frm in res.forms.values():
             if frm.id == id:
                 return frm
         raise ValueError("Form id=%s not found" % id)

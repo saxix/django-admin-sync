@@ -55,4 +55,9 @@ docs: .mkbuilddir
 
 .PHONY: build docs
 
+run1:
+	ADMIN_SYNC_REMOTE=1 python manage.py migrate
+	ADMIN_SYNC_REMOTE=1 python manage.py runserver localhost:8001
 
+run2:
+	python manage.py runserver

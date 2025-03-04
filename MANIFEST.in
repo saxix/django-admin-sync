@@ -1,12 +1,26 @@
+graft docs
+include LICENSE
+include src/*.py
+
 include README.md
+include MANIFEST.in
+include AUTHORS.rst
 include CHANGES
 include LICENSE
-include MANIFEST.in
-include setup.py
-include tox.ini
+include *.py
 
-include tests/.coveragerc
-recursive-include src/requirements *.pip
-recursive-include docs *
-recursive-include src/admin_sync *
-recursive-include tests *
+exclude .editorconfig
+exclude manage.py
+exclude .*
+exclude .act
+exclude *
+exclude tests
+
+recursive-include src/admin_sync *.*
+recursive-exclude .act *
+
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude ~*
+global-exclude *~
+global-exclude .*

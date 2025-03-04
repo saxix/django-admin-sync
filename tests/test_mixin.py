@@ -15,7 +15,4 @@ def test_post_remote_data_404(app, admin_user, monkeypatch, responses):
     url = reverse("admin:auth_user_publish", args=[admin_user.pk])
     res = app.post(url, user=admin_user, expect_errors=True)
     assert res.status_code == 200
-    assert (
-        str(list(res.context["messages"])[0])
-        == "Http404: http://remote/auth/user/receive/"
-    )
+    assert str(list(res.context["messages"])[0]) == "Http404: http://remote/auth/user/receive/"

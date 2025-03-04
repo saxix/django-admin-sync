@@ -1,0 +1,9 @@
+{% extends "admin/admin_sync/_publish_base.html" %}{% load admin_sync admin_urls %}
+{% block action-content %}
+
+    <pre>
+    {{ result|escapedict }}
+
+    </pre>
+
+{% endblock %}

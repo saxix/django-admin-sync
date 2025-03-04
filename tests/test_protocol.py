@@ -10,5 +10,3 @@ def test_sync(admin_user):
     origin = User.objects.all()
     data1 = p.serialize(origin)
     data2 = p.deserialize(data1)
-    # FIXME: remove me (print)
-    print(111, "test_protocol.py:16 (test_sync)", data2)
