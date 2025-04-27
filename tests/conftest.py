@@ -22,7 +22,7 @@ def setup(settings):
     settings.DATABASE_NAME = "tests.sqlite"
 
 
-@pytest.fixture()
+@pytest.fixture
 def remote(responses, settings):
     def _get(request):
         settings.SESSION_COOKIE_NAME = "remote"
@@ -55,11 +55,11 @@ def remote(responses, settings):
 
 @pytest.fixture
 def app(django_app_factory):
-    def get_url_by_id(self, res, id):
+    def get_url_by_id(self, res, object_id):
         for frm in res.forms.values():
-            if frm.id == id:
+            if frm.id == object_id:
                 return frm
-        raise ValueError("Form id=%s not found" % id)
+        raise ValueError("Form id=%s not found" % object_id)
 
     ret = django_app_factory(csrf_checks=False)
     ret.get_url_by_id = get_url_by_id.__get__(ret)

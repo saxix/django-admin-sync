@@ -1,15 +1,13 @@
 import os
 from typing import Iterable
 
-from admin_extra_buttons.decorators import button
 from django.contrib.admin import site
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import Model
-from django.http import HttpRequest, HttpResponse
 from reversion.admin import VersionAdmin
 
 from admin_sync.mixin import SyncMixin, SyncModelAdmin
-from admin_sync.protocol import BaseProtocol, LoadDumpProtocol
+from admin_sync.protocol import LoadDumpProtocol
 
 from .models import Base, Detail, Tag
 
@@ -24,13 +22,9 @@ class BaseModelAdmin(SyncMixin):
 
 class DetailProtocol(LoadDumpProtocol):
     def collect(self, data) -> Iterable[Model]:
-        parents = []
         c = self.collector_class(collect_related=True)
         c.collect(data)
-        for o in c.data:
-            if isinstance(o, Detail) and o.brother:
-                parents.append(o.brother)
-        return parents
+        return [o.brother for o in c.data if isinstance(o, Detail) and o.brother]
 
 
 class DetailModelAdmin(SyncMixin, VersionAdmin):

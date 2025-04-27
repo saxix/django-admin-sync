@@ -8,10 +8,11 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import quote_plus, unquote_plus
 
 import requests
+from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 from django.contrib import admin, messages
 from django.contrib.admin import ModelAdmin
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
-from django.core import checks, signing
+from django.core import checks
 from django.core.serializers import get_serializer
 from django.core.validators import ValidationError
 from django.db.models import Model
@@ -21,8 +22,6 @@ from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.debug import sensitive_variables
 from requests.auth import HTTPBasicAuth
-
-from admin_extra_buttons.api import ExtraButtonsMixin, button, view
 
 from .conf import PROTOCOL_VERSION, config
 from .exceptions import PublishError, RemoteError, UnsupportedError, VersionMismatchError
@@ -53,10 +52,7 @@ if TYPE_CHECKING:
     from django.db.models.options import Options
     from django.template import Context
 
-
 logger = logging.getLogger(__name__)
-
-signer = signing.TimestampSigner()
 
 
 class BaseSyncMixin(ExtraButtonsMixin):

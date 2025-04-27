@@ -1,6 +1,6 @@
 import json
 
-import pytest as pytest
+import pytest
 from django.http import HttpResponse
 from freezegun import freeze_time
 
@@ -88,59 +88,6 @@ def test_is_logged_to_remote(rf):
     assert not is_logged_to_remote(request)
 
 
-#
-# def test_get_prod_credentials(rf):
-#     request = rf.get("/")
-#     assert get_remote_credentials(request) == {"username": "", "password": ""}
-#
-#
-# def test_get_signed_credentials2(rf):
-#     v = sign_prod_credentials("u", "p")
-#     request = rf.get("/")
-#     request.COOKIES[config.CREDENTIALS_COOKIE] = v
-#     assert get_remote_credentials(request) == {"username": "u", "password": "p"}
-
-
 def test_render(rf):
     request = rf.get("/")
     assert render(request, "admin/base.html", cookies={"a": 1})
-
-
-#
-# def test_get_remote_data_200(admin_user, remote):
-#     from django.contrib.auth.models import User
-#     url = remote_reverse(admin_urlname(User._meta, "dumpdata_qs"))
-#     ret = get_remote_data(url, {"username": admin_user.username,
-#                                 "password": "password"})
-#     assert json.loads(ret)
-#
-#
-# def test_get_remote_data_403(admin_user, remote):
-#     from django.contrib.auth.models import User
-#     url = remote_reverse(admin_urlname(User._meta, "dumpdata_qs"))
-#     with pytest.raises(PermissionError):
-#         assert get_remote_data(url)
-
-
-# def test_get_remote_data_404(admin_user, responses):
-#     url = f"{config.REMOTE_SERVER}/admin/auth/group/dumpdata_qs/"
-#     responses.add(responses.GET, url, status=404)
-#     with pytest.raises(Http404):
-#         get_remote_data(url, {"username": admin_user.username,
-#                               "password": "password"})
-#
-#
-# def test_get_remote_data_error(admin_user, responses):
-#     url = f"{config.REMOTE_SERVER}/admin/auth/group/dumpdata_qs/"
-#     responses.add(responses.GET, url, "", status=200)
-#     with pytest.raises(Exception):
-#         get_remote_data(url)
-#
-#
-# def test_loaddata_from_url(rf, admin_user, responses):
-#     from django.contrib.auth.models import User
-#     url = remote_reverse(admin_urlname(User._meta, "dumpdata_qs"))
-#     request = rf.get("/")
-#     request.user = admin_user
-#     responses.add(responses.GET, url, DATA, status=200)
-#     loaddata_from_url(request, url)

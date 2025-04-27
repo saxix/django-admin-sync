@@ -6,15 +6,17 @@ import logging
 from typing import Any
 from urllib.parse import quote, unquote
 
+import pytz
 from django.conf import settings
 from django.core import signing
 from django.http import HttpRequest, HttpResponse
 from django.template import Context, loader
 from django.urls.base import reverse
+from django.utils.functional import SimpleLazyObject
 
 from .conf import PROTOCOL_VERSION, config
 
-signer = signing.TimestampSigner()
+signer = SimpleLazyObject(lambda: signing.TimestampSigner())
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +76,7 @@ def sign_prod_credentials(username: str, password: str) -> str:
 def set_cookie(response: HttpResponse, key: str, value: str, days_expire: int = 7) -> None:
     max_age = ONE_YEAR if days_expire is None else days_expire * DAY
     expires = datetime.datetime.strftime(
-        datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=max_age),
+        datetime.datetime.now(tz=pytz.UTC) + datetime.timedelta(seconds=max_age),
         "%a, %d-%b-%Y %H:%M:%S GMT",
     )
     response.set_cookie(
@@ -97,7 +99,8 @@ def invalidate_cache() -> None:
 
 
 def get_client_ip(request: HttpRequest) -> str | None:
-    """
+    """Returns remote client ip address from request.META.
+
     type: (WSGIRequest) -> Optional[Any]
     Naively yank the first IP address in an X-Forwarded-For header
     and assume this is correct.
@@ -126,10 +129,6 @@ def render(
     using: str | None = None,
     cookies: dict[str, str] | None = None,
 ) -> HttpResponse:
-    """
-    Return a HttpResponse whose content is filled with the result of calling
-    django.template.loader.render_to_string() with the passed arguments.
-    """
     content = loader.render_to_string(template_name, context, request, using=using)
     response = HttpResponse(content, content_type, status)
     if cookies:

@@ -85,11 +85,13 @@ class LoadDumpProtocol(BaseProtocol):
                 )
                 for obj in objects:
                     obj.save(using=self.using)
-                    processed.append([
-                        obj.object._meta.object_name,
-                        str(obj.object.pk),
-                        str(obj.object),
-                    ])
+                    processed.append(
+                        [
+                            obj.object._meta.object_name,
+                            str(obj.object.pk),
+                            str(obj.object),
+                        ]
+                    )
         except DeserializationError as e:
             logger.exception(e)
             raise ProtocolError(e) from e

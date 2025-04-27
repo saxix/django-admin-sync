@@ -41,7 +41,7 @@ class ForeignKeysCollector(BaseCollector):
         try:
             if field.related_name:
                 related_attr = getattr(obj, field.related_name)
-            elif isinstance(field, (OneToOneField, OneToOneRel)):
+            elif isinstance(field, OneToOneField | OneToOneRel):
                 related_attr = getattr(obj, field.name)
             else:
                 related_attr = getattr(obj, f"{field.name}_set")

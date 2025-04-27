@@ -1,7 +1,6 @@
+from admin_extra_buttons.handlers import BaseExtraHandler
 from django.db.models import Model
 from django.http import HttpRequest
-
-from admin_extra_buttons.handlers import BaseExtraHandler
 
 
 def check_publish_permission(request: HttpRequest, obj: Model, handler: BaseExtraHandler) -> bool:

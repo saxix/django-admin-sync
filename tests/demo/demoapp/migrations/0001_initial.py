@@ -5,44 +5,61 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Extra',
+            name="Extra",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=10)),
+                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=10)),
             ],
         ),
         migrations.CreateModel(
-            name='Tag',
+            name="Tag",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=10)),
+                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=10)),
             ],
         ),
         migrations.CreateModel(
-            name='Base',
+            name="Base",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=10)),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='childs', to='demoapp.base')),
-                ('tags', models.ManyToManyField(to='demoapp.tag')),
+                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=10)),
+                (
+                    "parent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="childs",
+                        to="demoapp.base",
+                    ),
+                ),
+                ("tags", models.ManyToManyField(to="demoapp.tag")),
             ],
         ),
         migrations.CreateModel(
-            name='Detail',
+            name="Detail",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=10)),
-                ('base', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='demoapp.base')),
-                ('brother', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='demoapp.detail')),
-                ('extra', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='demoapp.extra')),
+                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("name", models.CharField(max_length=10)),
+                ("base", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="demoapp.base")),
+                (
+                    "brother",
+                    models.OneToOneField(
+                        blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to="demoapp.detail"
+                    ),
+                ),
+                (
+                    "extra",
+                    models.OneToOneField(
+                        blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to="demoapp.extra"
+                    ),
+                ),
             ],
         ),
     ]

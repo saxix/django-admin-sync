@@ -28,7 +28,7 @@ def escapedict(data: dict[str, Any]) -> Any:
         return data
     for key, value in data.items():
         if isinstance(value, int) and not isinstance(value, bool):
-            data[key] = int(mark_safe(value))
+            data[key] = int(str(value))
         else:
-            data[key] = mark_safe(value)
+            data[key] = mark_safe(value)  # noqa: S308
     return json.dumps(data, indent=4)

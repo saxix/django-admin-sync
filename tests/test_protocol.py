@@ -9,4 +9,4 @@ def test_sync(admin_user):
     p = LoadDumpProtocol(Mock())
     origin = User.objects.all()
     data1 = p.serialize(origin)
-    data2 = p.deserialize(data1)
+    p.deserialize(data1)

@@ -15,7 +15,7 @@ except ImportError:
     reversion_set_user = reversion_set_comment = lambda *k: True  # noqa: ARG005
 
     @contextlib.contextmanager
-    def reversion_create_revision() -> Generator[None, None, None]:
+    def reversion_create_revision() -> Generator[None]:
         yield
 
 
@@ -24,5 +24,5 @@ try:
 except ImportError:
 
     @contextlib.contextmanager
-    def disable_concurrency() -> Generator[None, None, None]:
+    def disable_concurrency() -> Generator[None]:
         yield
