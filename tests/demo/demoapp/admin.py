@@ -13,7 +13,8 @@ from .models import Base, Detail, Tag
 
 
 class SyncUserAdmin(SyncMixin, UserAdmin):
-    pass
+    def admin_sync_show_inspect(self) -> bool:
+        return True
 
 
 class BaseModelAdmin(SyncMixin):

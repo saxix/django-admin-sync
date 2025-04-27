@@ -38,6 +38,7 @@ dependencies = [
   "django-admin-extra-buttons>=2.1",
   "django-concurrency",
   "django-stubs",
+  "natural-keys>=2.1.1",
   "pytz>=2025.1",
   "requests",
 ]

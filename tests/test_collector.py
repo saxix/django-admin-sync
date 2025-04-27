@@ -1,3 +1,5 @@
+from django.contrib.auth.models import User
+
 from admin_sync.collector import ForeignKeysCollector
 
 
@@ -60,3 +62,15 @@ def test_collector_o2o(db):
     c = ForeignKeysCollector(True)
     c.collect([b, d1, d1])
     assert c.data == [b, d0, d1, d2] + list(b.tags.all())
+
+
+def test_collector_qs(db):
+    from demoapp.factories import GroupFactory, UserFactory
+
+    u = UserFactory()
+    g = GroupFactory()
+    u.groups.add(g)
+    c = ForeignKeysCollector(True)
+    c.collect(User.objects.all())
+
+    assert c.data == [u, g]

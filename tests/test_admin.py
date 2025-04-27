@@ -1,4 +1,9 @@
+from django.contrib.auth.models import User
 from django.urls import reverse
+from responses import RequestsMock
+
+from admin_sync.conf import PROTOCOL_VERSION
+from admin_sync.protocol import LoadDumpProtocol
 
 DATA = (
     '{"data": "%5B%7B%22model%22%3A%20%22auth.user%22%2C%20%22fields%22%3A%20%7B%22'
@@ -59,7 +64,40 @@ def test_sync(app, admin_user, monkeypatch, remote):
     assert "stdout" in res.context
 
 
-def test_publish(app, admin_user, responses):
+def test_inspect(app, admin_user, responses: RequestsMock):
+    url = reverse("admin:auth_user_change", args=[admin_user.pk])
+    res = app.get(url, user=admin_user)
+    res = res.click(linkid="btn-admin_sync_inspect_single")
+    assert "(Total Records: 1)" in res.text
+
+
+def test_display_remotes(app, admin_user, responses: RequestsMock):
+    responses.add(
+        responses.POST,
+        "http://remote/auth/user/check_login/",
+        '{"user": "' + admin_user.username + '"}',
+        status=200,
+    )
+    responses.add(
+        responses.GET,
+        "http://remote/auth/user/dumpdata_qs/",
+        json={"data": LoadDumpProtocol().serialize(User.objects.all())},
+        adding_headers={"x-admin-sync": PROTOCOL_VERSION},
+        status=200,
+    )
+
+    url = reverse("admin:auth_user_changelist")
+    res = app.get(url, user=admin_user)
+    res = res.click(linkid="btn-display_remotes").follow()
+    frm = app.get_url_by_id(res, "sync-remote-login")
+    frm["username"] = admin_user.username
+    frm["password"] = "password"
+    res = frm.submit().follow()
+    res = res.forms["sync-remote-load"].submit()
+    assert res.json
+
+
+def test_publish(app, admin_user, responses: RequestsMock):
     responses.add(
         responses.POST,
         "http://remote/auth/user/check_login/",

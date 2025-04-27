@@ -15,7 +15,7 @@ from django.contrib.admin.templatetags.admin_urls import admin_urlname
 from django.core import checks
 from django.core.serializers import get_serializer
 from django.core.validators import ValidationError
-from django.db.models import Model
+from django.db.models import Model, QuerySet
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls.base import reverse as local_reverse
 from django.utils.translation import gettext_lazy as _
@@ -48,9 +48,11 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
+    from admin_extra_buttons.buttons import ButtonWidget
     from django.core.serializers.base import Serializer
     from django.db.models.options import Options
     from django.template import Context
+    from natural_keys import NaturalKeyModel
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +72,12 @@ class BaseSyncMixin(ExtraButtonsMixin):
         return ret.json()
 
     @sensitive_variables("credentials")
-    def get_remote_data(self, request: HttpRequest, urlname: str, obj: Model | None = None) -> str:  # noqa: C901
+    def get_remote_data(self, request: HttpRequest, url_name: str, obj: NaturalKeyModel | None = None) -> str:  # noqa: C901
         if obj:
             natural_key = "|".join(obj.natural_key())
-            url = remote_reverse(admin_urlname(self.model._meta, urlname), args=[natural_key])
+            url = remote_reverse(admin_urlname(self.model._meta, url_name), args=[natural_key])
         else:
-            url = remote_reverse(admin_urlname(self.model._meta, urlname))
+            url = remote_reverse(admin_urlname(self.model._meta, url_name))
         self.message_user(request, f"Fetching data from {url}", messages.WARNING)
         auth = None
         if credentials := config.get_credentials(request):
@@ -102,6 +104,7 @@ class BaseSyncMixin(ExtraButtonsMixin):
             logger.exception(e)
             raise JSONDecodeError(f"{ret.status_code}: {ret.content}") from e
         except KeyError as e:
+            logger.exception(e)
             raise UnsupportedError from e
         except Exception as e:
             logger.exception(e)
@@ -195,7 +198,7 @@ class CollectMixin(ModelAdmin[Model]):
             )
         return []
 
-    def get_sync_data(self, request: HttpRequest, source: str) -> str:
+    def get_sync_data(self, request: HttpRequest, source: QuerySet[NaturalKeyModel]) -> str:
         return self.protocol_class(request).serialize(source)
 
     def admin_sync_show_inspect(self) -> bool:
@@ -226,8 +229,7 @@ class GetManyFromRemoteMixin(CollectMixin, RemoteLogin):
                 data = self.get_remote_data(request, "dumpdata_qs")
                 return JsonResponse(json.loads(data), safe=False)
             except PermissionError:
-                url = local_reverse(admin_urlname(self.model._meta, "remote_login"))
-                return HttpResponseRedirect(f"{url}?from={quote_plus(request.path)}")
+                self.message_user(request, "Permission Denied", messages.ERROR)
             except Exception as e:
                 logger.exception(e)
                 self.message_error_to_user(request, e)
@@ -340,6 +342,10 @@ class GetSingleFromRemoteMixin(CollectMixin, RemoteLogin):
         return request.user.is_staff
 
 
+def aaa(btn: ButtonWidget) -> bool:
+    return True
+
+
 class PublishMixin(CollectMixin, BaseSyncMixin):
     def get_serializer(self, fmt: str) -> Serializer:  # noqa: PLR6301
         return get_serializer(fmt)()
@@ -409,11 +415,11 @@ class PublishMixin(CollectMixin, BaseSyncMixin):
         return request.user.is_staff
 
     @button(
-        visible=lambda b: b.model_admin.admin_sync_show_inspect(),
+        visible=lambda b: b.handler.model_admin.admin_sync_show_inspect(),
         html_attrs={"style": "background-color:red"},
     )
     def admin_sync_inspect_single(self, request: HttpRequest, pk: str) -> HttpResponse:
-        context = self.get_common_context(request, title="Sync Inspect")
+        context = self.get_common_context(request, pk, title="Sync Inspect")
         collector = self.protocol_class(request)
         data = collector.collect([self.get_object(request, pk)])
         context["data"] = data

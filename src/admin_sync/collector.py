@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import logging
 from itertools import chain
+from typing import TYPE_CHECKING
 
 from django.db.models import (
     Field,
@@ -14,6 +15,9 @@ from django.db.models import (
     OneToOneRel,
     QuerySet,
 )
+
+if TYPE_CHECKING:
+    from natural_keys import NaturalKeyModel
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +32,10 @@ class BaseCollector(abc.ABC):
         super().__init__()
 
     @abc.abstractmethod
-    def collect(self, objs: list[Model], collect_related: bool = False) -> None:
-        pass
+    def collect(self, objs: list[Model], collect_related: bool = False) -> None: ...  # pragma: no cover
 
     @abc.abstractmethod
-    def add(self, objs: list[Model], collect_related: bool = False) -> None:
-        pass
+    def add(self, objs: list[Model], collect_related: bool = False) -> None: ...  # pragma: no cover
 
 
 class ForeignKeysCollector(BaseCollector):
@@ -108,7 +110,7 @@ class ForeignKeysCollector(BaseCollector):
             self.collect_related = collect_related
         self.data += self._collect(objs)
 
-    def collect(self, objs: list[Model], collect_related: bool | None = None) -> None:
+    def collect(self, objs: list[NaturalKeyModel] | QuerySet[Model], collect_related: bool | None = None) -> None:
         if collect_related is not None:
             self.collect_related = collect_related
         self.cache = {}

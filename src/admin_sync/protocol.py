@@ -63,7 +63,7 @@ class LoadDumpProtocol(BaseProtocol):
         c.collect(data)
         return c.data
 
-    def serialize(self, data: "Collectable") -> Any:
+    def serialize(self, data: "Collectable") -> str:
         data = self.collect(data)
         json: JsonSerializer = get_serializer("json")()
         return json.serialize(
