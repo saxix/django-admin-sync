@@ -1,4 +1,6 @@
-from django.contrib.auth.models import User
+from demoapp.factories import BaseFactory, DetailFactory, ExtraFactory, UserFactory, user_grant_permissions
+from django.contrib.auth.models import Group, User
+from django_factory_boy.auth import PermissionFactory
 
 from admin_sync.collector import ForeignKeysCollector
 
@@ -74,3 +76,42 @@ def test_collector_qs(db):
     c.collect(User.objects.all())
 
     assert c.data == [u, g]
+
+
+def test_collector_add(db):
+    from demoapp.factories import GroupFactory, UserFactory
+
+    u = UserFactory()
+    g = GroupFactory()
+    PermissionFactory()
+    u.groups.add(g)
+    c = ForeignKeysCollector(True)
+    c.collect(User.objects.all())
+    c.add(Group.objects.all(), True)
+    c.add(Group.objects.all(), None)
+
+    assert c.data == [u, g]
+
+
+def test_collector_collect(db):
+    u = UserFactory()
+    c = ForeignKeysCollector()
+    c.collect([u])
+    assert len(c.data) == 1
+    with user_grant_permissions(u, "auth.add_user") as p2:
+        c.collect([u], True)
+        assert c.data[0:2] == [u, p2.group]
+        assert len(c.data) == 7  #  [User, Group, Permission, ContentType, Permission, Permission, Permission]
+
+
+def test_collector_collect_related(db):
+    b = BaseFactory(parent=None, tags=None)
+    d = DetailFactory(
+        base=b,
+        extra=ExtraFactory(),
+        brother=None,
+    )
+    c = ForeignKeysCollector()
+    c.collect([d])
+    assert c.data[0:2] == [d, b]
+    assert len(c.data) == 4  #   [Detail, Base, Extra]

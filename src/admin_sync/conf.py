@@ -26,10 +26,9 @@ class Config:
         "DEBUG": settings.DEBUG,
         "LOCAL_ADMIN_URL": "/admin/",
         "REMOTE_ADMIN_URL": "/admin/",
-        "CREDENTIALS_COOKIE": "admin_sync_token",
         "CREDENTIALS_HOLDER": "admin_sync.utils.get_remote_credentials",
-        "CREDENTIALS_PROMPT": True,
-        "USE_REVERSION": True,
+        "REMOTE_PASSWORD": "",
+        "REMOTE_USER": "",
         "RESPONSE_HEADER": "x-admin-sync",
     }
     storage = None
@@ -41,10 +40,8 @@ class Config:
         return len(self.defaults)
 
     def _get(self, key: str) -> Any:
-        if key in self.defaults:
-            full_name = f"ADMIN_SYNC_{key}"
-            return getattr(self.storage, full_name, self.defaults.get(key, None))
-        return None
+        full_name = f"ADMIN_SYNC_{key}"
+        return getattr(self.storage, full_name, self.defaults.get(key, None))
 
     def get_credentials(self, request: HttpRequest) -> dict[str, str]:
         f = import_string(self.CREDENTIALS_HOLDER)
@@ -62,14 +59,12 @@ class DjangoSettings(Config):
 
 class DjangoConstance(DjangoSettings):
     def _get(self, key: str) -> bool | str | None:
-        if key in self.defaults:
-            full_name = f"ADMIN_SYNC_{key}"
-            return getattr(
-                self.storage,
-                full_name,
-                getattr(settings, full_name, self.defaults.get(key, None)),
-            )
-        return None
+        full_name = f"ADMIN_SYNC_{key}"
+        return getattr(
+            self.storage,
+            full_name,
+            getattr(settings, full_name, self.defaults.get(key, None)),
+        )
 
     @cached_property
     def storage(self) -> dict[str, Any]:  # noqa: PLR6301

@@ -45,19 +45,21 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "check-manifest",
+  "django-constance>=4.3.2",
+  #  "check-manifest",
+  #  "coverage>4.4",
+  #  "django-coverage-plugin>=3.1.0",
   "django-factory-boy",
-  "django-reversion",
-  #  "django-smart-admin",
+  #  "django-reversion",
   "django-webtest>=1.9.13",
   "freezegun",
+  "ipdb>=0.13.13",
   "pre-commit",
   "psycopg2-binary",
   "pytest",
   "pytest-cov",
   "pytest-django",
   "pytest-echo",
-  "pytest-pythonpath",
   "pytest-responses",
   "tox",
 ]

@@ -4,9 +4,8 @@ from typing import Iterable
 from django.contrib.admin import site
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import Model
-from reversion.admin import VersionAdmin
 
-from admin_sync.mixin import SyncMixin, SyncModelAdmin
+from admin_sync.mixins import SyncMixin, SyncModelAdmin
 from admin_sync.protocol import LoadDumpProtocol
 
 from .models import Base, Detail, Tag
@@ -28,7 +27,7 @@ class DetailProtocol(LoadDumpProtocol):
         return [o.brother for o in c.data if isinstance(o, Detail) and o.brother]
 
 
-class DetailModelAdmin(SyncMixin, VersionAdmin):
+class DetailModelAdmin(SyncMixin):
     protocol_class = DetailProtocol
 
 

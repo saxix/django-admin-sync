@@ -4,8 +4,4 @@ from django.http import HttpRequest
 
 
 def check_publish_permission(request: HttpRequest, obj: Model, handler: BaseExtraHandler) -> bool:
-    return handler.model_admin.check_publish_permission(request, obj)
-
-
-def check_sync_permission(request: HttpRequest, obj: Model, handler: BaseExtraHandler) -> bool:
-    return handler.model_admin.check_sync_permission(request, obj)
+    return handler.model_admin.can_publish(request, obj)

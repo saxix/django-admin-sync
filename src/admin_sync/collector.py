@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import logging
 from itertools import chain
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 from django.db.models import (
     Field,
@@ -80,7 +80,7 @@ class ForeignKeysCollector(BaseCollector):
                 added.append(o)
         return added
 
-    def _collect(self, objs: list[Model]) -> list[Model]:
+    def _collect(self, objs: Iterable[Model]) -> list[Model]:
         objects = []
         for o in objs:
             if o:
@@ -105,12 +105,12 @@ class ForeignKeysCollector(BaseCollector):
 
         return objects
 
-    def add(self, objs: list[Model], collect_related: bool | None = None) -> None:
+    def add(self, objs: Iterable[Model], collect_related: bool | None = None) -> None:
         if collect_related is not None:
             self.collect_related = collect_related
         self.data += self._collect(objs)
 
-    def collect(self, objs: list[NaturalKeyModel] | QuerySet[Model], collect_related: bool | None = None) -> None:
+    def collect(self, objs: Iterable[NaturalKeyModel] | QuerySet[Model], collect_related: bool | None = None) -> None:
         if collect_related is not None:
             self.collect_related = collect_related
         self.cache = {}

@@ -4,7 +4,6 @@ SECRET_KEY = "aaaaaaa"
 
 ADMIN_SYNC_LOCAL_ADMIN_URL = ""
 ADMIN_SYNC_REMOTE_ADMIN_URL = ""
-ADMIN_SYNC_USE_REVERSION = True
 
 if os.environ.get("ADMIN_SYNC_REMOTE"):
     SESSION_COOKIE_NAME = "remote"
@@ -51,11 +50,12 @@ TEMPLATES = [
         "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
+            "debug": True,
             "context_processors": [
                 "django.contrib.messages.context_processors.messages",
                 "django.contrib.auth.context_processors.auth",
                 "django.template.context_processors.request",
-            ]
+            ],
         },
     },
 ]
@@ -70,9 +70,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.admin",
-    "reversion",
     "concurrency",
+    "constance",
     "admin_extra_buttons",
     "admin_sync",
     "demoapp.apps.Config",
 ]
+CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
+CONSTANCE_CONFIG = {
+    "ADMIN_SYNC_REMOTE_SERVER": ("http://localhost:8888", "", str),
+}

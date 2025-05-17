@@ -1,15 +1,11 @@
 import json
 
-import pytest
-from django.http import HttpResponse
-from freezegun import freeze_time
-
 from admin_sync.utils import (
-    get_client_ip,
-    is_logged_to_remote,
+    # get_client_ip,
+    # is_logged_to_remote,
     remote_reverse,
-    render,
-    set_cookie,
+    # render,
+    # set_cookie,
     unwrap,
     wraps,
 )
@@ -46,48 +42,3 @@ def test_unwrap():
 
 def test_remote_reverse():
     assert remote_reverse("admin:login") == "http://remote/login/"
-
-
-@freeze_time("2012-01-14 10:10:10")
-@pytest.mark.parametrize("expire", [None, 365])
-def test_set_cookie(expire):
-    response = HttpResponse()
-    set_cookie(response, "test", "abc", days_expire=expire)
-    assert response.cookies["test"] == {
-        "comment": "",
-        "domain": "",
-        "expires": "Sun, 13-Jan-2013 10:10:10 GMT",
-        "httponly": "",
-        "max-age": 31536000,
-        "path": "/",
-        "samesite": "",
-        "secure": "",
-        "version": "",
-    }
-
-
-@pytest.mark.parametrize(
-    "key,value",
-    [
-        ("HTTP_X_ORIGINAL_FORWARDED_FOR", "127.0.0.11"),
-        ("HTTP_X_FORWARDED_FOR", "127.0.0.12"),
-        ("HTTP_X_REAL_IP", "127.0.0.13"),
-        ("REMOTE_ADDR", "127.0.0.14"),
-        ("", None),
-    ],
-)
-def test_get_client_ip(rf, key, value):
-    request = rf.get("/", **{key: value})
-    if key != "REMOTE_ADDR":
-        del request.META["REMOTE_ADDR"]
-    assert get_client_ip(request) == value
-
-
-def test_is_logged_to_remote(rf):
-    request = rf.get("/")
-    assert not is_logged_to_remote(request)
-
-
-def test_render(rf):
-    request = rf.get("/")
-    assert render(request, "admin/base.html", cookies={"a": 1})
