@@ -8,7 +8,7 @@ from django.db.models import Model
 from admin_sync.mixins import SyncModelAdmin, SyncPushMixin
 from admin_sync.protocol import LoadDumpProtocol
 
-from .models import Base, Detail, Tag, MissingNaturalKey
+from .models import Base, Detail, Tag, MissingNaturalKey, MissingNaturalKeyProtocol
 
 
 class SyncUserAdmin(SyncModelAdmin, UserAdmin):
@@ -35,6 +35,7 @@ site.register(Base, BaseModelAdmin)
 site.register(Detail, DetailModelAdmin)
 site.register(Tag, SyncModelAdmin)
 site.register(MissingNaturalKey, SyncModelAdmin)
+site.register(MissingNaturalKeyProtocol, SyncModelAdmin)
 
 if os.environ.get("ADMIN_SYNC_REMOTE"):
     site.site_header = "AdminSync REMOTE"

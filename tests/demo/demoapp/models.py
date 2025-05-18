@@ -37,8 +37,21 @@ class Detail(models.Model):
         return self.name
 
 
+class MissingNaturalKeyProtocol(models.Model):
+    name = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.name
+
+
+class MissingNaturalKeyManager(models.Manager):
+    def get_by_natural_key(self):
+        pass
+
+
 class MissingNaturalKey(models.Model):
     name = models.CharField(max_length=10)
+    objects = MissingNaturalKeyManager()
 
     def __str__(self):
         return self.name
