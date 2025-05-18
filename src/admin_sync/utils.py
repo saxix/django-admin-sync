@@ -30,8 +30,8 @@ def unwrap(payload: bytes) -> str:
 
 
 def remote_reverse(urlname: str, args: Any | None = None, kwargs: Any | None = None) -> str:
-    local = reverse(urlname, args=args, kwargs=kwargs)
-    return config.REMOTE_SERVER + local.replace(config.LOCAL_ADMIN_URL, config.REMOTE_ADMIN_URL)
+    local: str = reverse(urlname, args=args, kwargs=kwargs)
+    return f"{config.REMOTE_SERVER}{local.replace(config.LOCAL_ADMIN_URL, config.REMOTE_ADMIN_URL)}"
 
 
 def get_remote_credentials(request: HttpRequest) -> dict[str, str]:

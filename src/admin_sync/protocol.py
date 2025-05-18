@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Sized
+from typing import TYPE_CHECKING, Any
 
 from django.core.serializers.json import Deserializer as JsonDeserializer
 from django.core.serializers.json import Serializer as JsonSerializer
@@ -25,16 +25,22 @@ logger = logging.getLogger(__name__)
 
 
 class BaseProtocol(abc.ABC):
-    collector_class: BaseCollector = ForeignKeysCollector
+    collector_class: type[BaseCollector] = ForeignKeysCollector
+    serializer_class: "type[Serializer]" = JsonSerializer
+    deserializer_class: "type[Deserializer]" = JsonDeserializer  # type: ignore[assignment]
 
     def __init__(self, request: HttpRequest | None = None) -> None:
         self.request = request
 
-    @abc.abstractmethod
-    def serialize(self, collection: Iterable) -> None: ...
+    @property
+    def serializer(self) -> "Serializer":
+        return self.serializer_class()
 
     @abc.abstractmethod
-    def deserialize(self, request: HttpRequest) -> list[list[Any]]: ...
+    def serialize(self, collection: Collectable) -> None: ...
+
+    @abc.abstractmethod
+    def deserialize(self, payload: str) -> list[list[Any]]: ...
 
     @abc.abstractmethod
     def collect(self, data: "Collectable") -> Iterable[Model]: ...
@@ -42,19 +48,13 @@ class BaseProtocol(abc.ABC):
 
 class LoadDumpProtocol(BaseProtocol):
     using = "default"
-    serializer_class: "ClassVar[type[Serializer]]" = JsonSerializer
-    deserializer_class: "ClassVar[type[Deserializer]]" = JsonDeserializer
 
-    @property
-    def serializer(self) -> "Serializer":
-        return self.serializer_class()
-
-    def collect(self, data: "Collectable") -> Sized[Model]:
+    def collect(self, data: "Collectable") -> Iterable[Model]:
         c = self.collector_class(collect_related=True)
         c.collect(data)
         return c.data
 
-    def serialize(self, data: Iterable) -> Any:
+    def serialize(self, data: Collectable) -> Any:
         data = self.collect(data)
         return self.serializer.serialize(data, use_natural_foreign_keys=True, use_natural_primary_keys=True)
 
@@ -63,7 +63,7 @@ class LoadDumpProtocol(BaseProtocol):
         try:
             connection = connections[self.using]
             with connection.constraint_checks_disabled(), transaction.atomic(self.using):
-                objects = self.__class__.deserializer_class(
+                objects = self.deserializer_class(
                     stream_or_string=payload, ignorenonexistent=True, handle_forward_references=True
                 )
                 for obj in objects:

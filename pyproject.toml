@@ -13,7 +13,7 @@ readme = "README.md"
 authors = [
   { name = "sax", email = "s.apostolico@gmail.com" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 classifiers = [
   "Environment :: Web Environment",
   "Framework :: Django",
@@ -23,9 +23,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
@@ -50,7 +47,6 @@ dev = [
   #  "coverage>4.4",
   #  "django-coverage-plugin>=3.1.0",
   "django-factory-boy",
-  #  "django-reversion",
   "django-webtest>=1.9.13",
   "freezegun",
   "ipdb>=0.13.13",
@@ -62,6 +58,7 @@ dev = [
   "pytest-echo",
   "pytest-responses",
   "tox",
+  "tox-uv>=1.25",
 ]
 
 docs = [
@@ -81,11 +78,11 @@ docs = [
   "mkdocstrings>=0.28.1",
   "mkdocstrings-python>=1.16.1",
 ]
-dj = [
-  "django",
-]
-type-check = [
+
+mypy = [
+  "django-stubs",
   "mypy",
+  "types-requests",
 ]
 
 [tool.hatch]

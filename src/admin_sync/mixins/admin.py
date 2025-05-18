@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 
 
 class SyncMixin(PublishMixin, ReceiveMixin):
-    @button(permission=check_publish_permission)
+    @button(permission=check_publish_permission)  # type: ignore[arg-type]
     def publish(self, request, pk):
         return self._publish(request, pk)
 
-    @view(decorators=[csrf_exempt], http_basic_auth=False, login_required=False)
+    @view(decorators=[csrf_exempt], http_basic_auth=False, login_required=False)  # type: ignore[arg-type]
     def receive(self, request) -> JsonResponse:
-        data = self._receive(request)
-        return JsonResponse({"status": "success", "records": len(data), "size": len(request.body)})
+        response = self._receive(request)
+        return JsonResponse(response.as_dict(), status=response.code)
 
 
 class SyncModelAdmin(SyncMixin, admin.ModelAdmin):

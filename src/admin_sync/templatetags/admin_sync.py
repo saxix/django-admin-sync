@@ -19,9 +19,9 @@ def classname(v: Any) -> str:
 
 @register.filter
 def admin_url(obj: Model, arg: str) -> str:
-    return reverse(admin_urlname(obj._meta, arg), args=[obj.pk])
+    return reverse(admin_urlname(obj._meta, arg), args=[obj.pk])  # type: ignore[arg-type]
 
 
 @register.filter
 def remote_url(obj: Model, arg: str) -> str:
-    return remote_reverse(admin_urlname(obj._meta, arg), args=[obj.pk])
+    return remote_reverse(admin_urlname(obj._meta, arg), args=[obj.pk])  # type: ignore[arg-type]

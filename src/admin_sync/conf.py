@@ -3,14 +3,17 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from django.conf import settings
+from django.conf import LazySettings, settings
 from django.utils.functional import SimpleLazyObject, cached_property
 from django.utils.module_loading import import_string
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from constance import LazyConfig  # type: ignore[import-untyped]
     from django.http import HttpRequest
+
+    type _S = LazySettings | LazyConfig
 
 
 ADMIN_SYNC_CONFIG = getattr(settings, "ADMIN_SYNC_CONFIG", "admin_sync.conf.DjangoSettings")
@@ -21,6 +24,10 @@ PROTOCOL_VERSION = "1.0"
 
 
 class Config:
+    LOCAL_ADMIN_URL: str
+    REMOTE_ADMIN_URL: str
+    REMOTE_USER: str
+    REMOTE_PASSWORD: str
     defaults: ClassVar = {
         "REMOTE_SERVER": "http://localhost:8001",
         "DEBUG": settings.DEBUG,
@@ -31,7 +38,10 @@ class Config:
         "REMOTE_USER": "",
         "RESPONSE_HEADER": "x-admin-sync",
     }
-    storage = None
+
+    @cached_property
+    def storage(self) -> "_S":  # noqa: PLR6301
+        return settings
 
     def __iter__(self) -> Iterator[tuple[str, str]]:
         return iter([(k, getattr(self, k)) for k in self.defaults])
@@ -44,7 +54,7 @@ class Config:
         return getattr(self.storage, full_name, self.defaults.get(key, None))
 
     def get_credentials(self, request: HttpRequest) -> dict[str, str]:
-        f = import_string(self.CREDENTIALS_HOLDER)
+        f = import_string(self.CREDENTIALS_HOLDER)  # type: ignore[arg-type]
         return f(request)
 
     def __getattr__(self, key: str) -> str | bool:
@@ -54,7 +64,7 @@ class Config:
 
 
 class DjangoSettings(Config):
-    storage = settings
+    pass
 
 
 class DjangoConstance(DjangoSettings):
@@ -67,7 +77,7 @@ class DjangoConstance(DjangoSettings):
         )
 
     @cached_property
-    def storage(self) -> dict[str, Any]:  # noqa: PLR6301
+    def storage(self) -> "LazyConfig":  # noqa: PLR6301
         import constance  # noqa: PLC0415
 
         return constance.config
@@ -77,4 +87,4 @@ def get_config() -> Config:
     return import_string(ADMIN_SYNC_CONFIG)()
 
 
-config: Config = SimpleLazyObject(get_config)
+config: Config = SimpleLazyObject(get_config)  # type: ignore[assignment]

@@ -2,19 +2,26 @@
 
 {% block action-content %}
     {% if data %}
-        {% for entry in data %}
-        <div>{{ entry }}</div>
-        {% endfor %}
+        <table>
+            {% for entry,value in data.items %}
+                <tr>
+                    <th>{{ entry }}</th>
+                    <td>{{ value }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <input type="button" value="Back" onclick="location.href='..'">
+    {% else %}
+        <div style="margin:10px">
+            Proceeding will publish {{ original }} to <strong>{{ server }}</strong>
+        </div>
+        <div style="margin-top:50px">
+            <form method="post" id="sync-remote-publish">
+                {% csrf_token %}
+                <input class="default" type="submit" value="Publish">
+                <input type="button" value="Cancel" onclick="javascript:history.back()">
+            </form>
+        </div>
     {% endif %}
-    === {{ data }} ===
-    <div style="margin:10px">
-        Proceeding will publish {{ original }} to <strong>{{ server }}</strong>
-    </div>
-    <div style="margin-top:50px">
-        <form method="post" id="sync-remote-publish">
-            {% csrf_token %}
-            <input class="default" type="submit" value="Publish">
-            <input type="button" value="Cancel" onclick="javascript:history.back()">
-        </form>
-    </div>
+
 {% endblock %}
