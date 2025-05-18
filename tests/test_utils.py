@@ -1,6 +1,8 @@
 import json
 
 from admin_sync.utils import (
+    decode_natural_key,
+    encode_natural_key,
     # get_client_ip,
     # is_logged_to_remote,
     remote_reverse,
@@ -42,3 +44,7 @@ def test_unwrap():
 
 def test_remote_reverse():
     assert remote_reverse("admin:login") == "http://remote/login/"
+
+
+def test_encode_natural_key(admin_user):
+    assert decode_natural_key(encode_natural_key(admin_user)) == admin_user.natural_key()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import zlib
 from typing import TYPE_CHECKING, Any
@@ -7,11 +8,13 @@ from typing import TYPE_CHECKING, Any
 from django.core import signing
 from django.urls.base import reverse
 from django.utils.functional import SimpleLazyObject
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from .conf import config
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
+    from .types import NaturalKeyModel
 
 signer = SimpleLazyObject(lambda: signing.TimestampSigner())
 
@@ -36,3 +39,11 @@ def remote_reverse(urlname: str, args: Any | None = None, kwargs: Any | None = N
 
 def get_remote_credentials(request: HttpRequest) -> dict[str, str]:
     return {"username": config.REMOTE_USER, "password": config.REMOTE_PASSWORD}
+
+
+def encode_natural_key(obj: "NaturalKeyModel") -> str:
+    return urlsafe_base64_encode(json.dumps(obj.natural_key()).encode())
+
+
+def decode_natural_key(key: str) -> tuple[str, ...]:
+    return tuple(json.loads(urlsafe_base64_decode(key)))

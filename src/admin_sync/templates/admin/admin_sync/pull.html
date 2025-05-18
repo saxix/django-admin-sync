@@ -1,0 +1,27 @@
+{% extends "admin/admin_sync/_publish_base.html" %}
+
+{% block action-content %}
+    {% if data %}
+        <table>
+            {% for entry,value in data.items %}
+                <tr>
+                    <th>{{ entry }}</th>
+                    <td>{{ value }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <input type="button" value="Back" onclick="location.href='..'">
+    {% else %}
+        <div style="margin:10px">
+            Proceeding will pull data from <strong>{{ server }}</strong>
+        </div>
+        <div style="margin-top:50px">
+            <form method="post" id="sync-remote-pull">
+                {% csrf_token %}
+                <input class="default" type="submit" value="Pull">
+                <input type="button" value="Cancel" onclick="javascript:history.back()">
+            </form>
+        </div>
+    {% endif %}
+
+{% endblock %}

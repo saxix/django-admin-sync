@@ -12,12 +12,14 @@ from django.shortcuts import render
 
 from admin_sync.conf import config
 from admin_sync.mixins.base import BaseSyncMixin
-from admin_sync.utils import remote_reverse, wraps
+from admin_sync.utils import encode_natural_key, remote_reverse, wraps
 
 if TYPE_CHECKING:
     from django.db.models import Model
     from django.http import HttpRequest, HttpResponse
     from requests.auth import HTTPBasicAuth
+
+    from admin_sync.types import NaturalKeyModel
 
 logger = logging.getLogger(__name__)
 
@@ -30,27 +32,28 @@ class ReceiveResponse:
     as_dict = asdict
 
 
-class PublishMixin(BaseSyncMixin):
-    def can_publish(self, request: HttpRequest, pk: str | None = None, obj: Model | None = None) -> bool:  # noqa: ARG002 PLR6301
+class PullMixin(BaseSyncMixin):
+    def can_pull(self, request: HttpRequest, pk: str | None = None, obj: Model | None = None) -> bool:  # noqa: ARG002 PLR6301
         return True
 
-    def _send(self, request, obj: Model, auth: HTTPBasicAuth | None = None) -> ReceiveResponse:
+    def _sync_pull_handler(self, request, obj: "NaturalKeyModel", auth: HTTPBasicAuth | None = None) -> ReceiveResponse:
         try:
-            url = remote_reverse(admin_urlname(self.model._meta, "receive"))  # type: ignore[arg-type]
+            key = encode_natural_key(obj)
+            url = remote_reverse(admin_urlname(self.model._meta, "reply"), args=[key])  # type: ignore[arg-type]
             data = self.protocol_class(request).serialize([obj])
             response = requests.post(url, data=wraps(data), auth=auth, timeout=60)
             return ReceiveResponse(status_code=response.status_code, payload=response.json())
         except JSONDecodeError:
             return ReceiveResponse(status_code=500, payload={"error": "Invalid JSON"})
 
-    def _publish(self, request: HttpRequest, pk: str) -> HttpResponse | None:
-        context = self.get_common_context(request, pk, title="Publish to REMOTE", server=config.REMOTE_SERVER)
+    def sync_pull_data(self, request: HttpRequest, pk: str) -> HttpResponse | None:
+        context = self.get_common_context(request, pk, title="Pull from REMOTE", server=config.REMOTE_SERVER)
         obj = context["original"]
         if request.method == "POST":
-            response = self._send(request, obj, auth=None)
+            response = self._sync_pull_handler(request, obj, auth=None)
             context["data"] = result = response.payload
             if response.status_code != 200:
                 self.message_user(request, "Error", messages.ERROR)
             else:
-                self.message_user(request, f"Published {result['records']}", messages.SUCCESS)
-        return render(request, "admin/admin_sync/publish.html", context)
+                self.message_user(request, f"Pulled {result['records']} records", messages.SUCCESS)
+        return render(request, "admin/admin_sync/pull.html", context)
