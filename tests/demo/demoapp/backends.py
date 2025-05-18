@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import User
-from django.http import HttpRequest
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
 
 class AnyUserBackend(ModelBackend):

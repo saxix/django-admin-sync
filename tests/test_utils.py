@@ -1,15 +1,13 @@
 import json
 
-import pytest as pytest
-from django.http import HttpResponse
-from freezegun import freeze_time
-
 from admin_sync.utils import (
-    get_client_ip,
-    is_logged_to_remote,
+    decode_natural_key,
+    encode_natural_key,
+    # get_client_ip,
+    # is_logged_to_remote,
     remote_reverse,
-    render,
-    set_cookie,
+    # render,
+    # set_cookie,
     unwrap,
     wraps,
 )
@@ -48,99 +46,5 @@ def test_remote_reverse():
     assert remote_reverse("admin:login") == "http://remote/login/"
 
 
-@freeze_time("2012-01-14 10:10:10")
-@pytest.mark.parametrize("expire", [None, 365])
-def test_set_cookie(expire):
-    response = HttpResponse()
-    set_cookie(response, "test", "abc", days_expire=expire)
-    assert response.cookies["test"] == {
-        "comment": "",
-        "domain": "",
-        "expires": "Sun, 13-Jan-2013 10:10:10 GMT",
-        "httponly": "",
-        "max-age": 31536000,
-        "path": "/",
-        "samesite": "",
-        "secure": "",
-        "version": "",
-    }
-
-
-@pytest.mark.parametrize(
-    "key,value",
-    [
-        ("HTTP_X_ORIGINAL_FORWARDED_FOR", "127.0.0.11"),
-        ("HTTP_X_FORWARDED_FOR", "127.0.0.12"),
-        ("HTTP_X_REAL_IP", "127.0.0.13"),
-        ("REMOTE_ADDR", "127.0.0.14"),
-        ("", None),
-    ],
-)
-def test_get_client_ip(rf, key, value):
-    request = rf.get("/", **{key: value})
-    if key != "REMOTE_ADDR":
-        del request.META["REMOTE_ADDR"]
-    assert get_client_ip(request) == value
-
-
-def test_is_logged_to_remote(rf):
-    request = rf.get("/")
-    assert not is_logged_to_remote(request)
-
-
-#
-# def test_get_prod_credentials(rf):
-#     request = rf.get("/")
-#     assert get_remote_credentials(request) == {"username": "", "password": ""}
-#
-#
-# def test_get_signed_credentials2(rf):
-#     v = sign_prod_credentials("u", "p")
-#     request = rf.get("/")
-#     request.COOKIES[config.CREDENTIALS_COOKIE] = v
-#     assert get_remote_credentials(request) == {"username": "u", "password": "p"}
-
-
-def test_render(rf):
-    request = rf.get("/")
-    assert render(request, "admin/base.html", cookies={"a": 1})
-
-
-#
-# def test_get_remote_data_200(admin_user, remote):
-#     from django.contrib.auth.models import User
-#     url = remote_reverse(admin_urlname(User._meta, "dumpdata_qs"))
-#     ret = get_remote_data(url, {"username": admin_user.username,
-#                                 "password": "password"})
-#     assert json.loads(ret)
-#
-#
-# def test_get_remote_data_403(admin_user, remote):
-#     from django.contrib.auth.models import User
-#     url = remote_reverse(admin_urlname(User._meta, "dumpdata_qs"))
-#     with pytest.raises(PermissionError):
-#         assert get_remote_data(url)
-
-
-# def test_get_remote_data_404(admin_user, responses):
-#     url = f"{config.REMOTE_SERVER}/admin/auth/group/dumpdata_qs/"
-#     responses.add(responses.GET, url, status=404)
-#     with pytest.raises(Http404):
-#         get_remote_data(url, {"username": admin_user.username,
-#                               "password": "password"})
-#
-#
-# def test_get_remote_data_error(admin_user, responses):
-#     url = f"{config.REMOTE_SERVER}/admin/auth/group/dumpdata_qs/"
-#     responses.add(responses.GET, url, "", status=200)
-#     with pytest.raises(Exception):
-#         get_remote_data(url)
-#
-#
-# def test_loaddata_from_url(rf, admin_user, responses):
-#     from django.contrib.auth.models import User
-#     url = remote_reverse(admin_urlname(User._meta, "dumpdata_qs"))
-#     request = rf.get("/")
-#     request.user = admin_user
-#     responses.add(responses.GET, url, DATA, status=200)
-#     loaddata_from_url(request, url)
+def test_encode_natural_key(admin_user):
+    assert decode_natural_key(encode_natural_key(admin_user)) == admin_user.natural_key()

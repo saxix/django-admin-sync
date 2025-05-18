@@ -5,13 +5,12 @@ class Config(AppConfig):
     name = "demoapp"
 
     def ready(self):
+        from django.contrib.admin import site
         from django.contrib.auth.models import User, UserManager
         from django.db.models.signals import post_migrate
-        from smart_admin.decorators import smart_register
 
         from admin_sync.conf import config
-
-        from .admin import SyncUserAdmin
+        from demoapp.admin import SyncUserAdmin
 
         def uget_by_natural_key(self, username):
             return self.get(username=username)
@@ -22,7 +21,8 @@ class Config(AppConfig):
         UserManager.get_by_natural_key = uget_by_natural_key
         User.natural_key = unatural_key
 
-        smart_register(User)(SyncUserAdmin)
+        site.unregister(User)
+        site.register(User, SyncUserAdmin)
 
         if not config.REMOTE_SERVER:
             post_migrate.connect(create_sample_data, sender=self)

@@ -13,12 +13,12 @@
         <input type="button" value="Back" onclick="location.href='..'">
     {% else %}
         <div style="margin:10px">
-            Proceeding will publish {{ original }} to <strong>{{ server }}</strong>
+            Proceeding will pull data from <strong>{{ server }}</strong>
         </div>
         <div style="margin-top:50px">
-            <form method="post" id="sync-remote-publish">
+            <form method="post" id="sync-remote-pull">
                 {% csrf_token %}
-                <input class="default" type="submit" value="Publish">
+                <input class="default" type="submit" value="Pull">
                 <input type="button" value="Cancel" onclick="javascript:history.back()">
             </form>
         </div>

@@ -12,6 +12,7 @@ include *.py
 exclude .editorconfig
 exclude manage.py
 exclude .*
+exclude ~*
 exclude .act
 exclude *
 exclude tests

@@ -1,45 +1,41 @@
 import os
 from typing import Iterable
 
-from admin_extra_buttons.decorators import button
 from django.contrib.admin import site
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import Model
-from django.http import HttpRequest, HttpResponse
-from reversion.admin import VersionAdmin
 
-from admin_sync.mixin import SyncMixin, SyncModelAdmin
-from admin_sync.protocol import BaseProtocol, LoadDumpProtocol
+from admin_sync.mixins import SyncModelAdmin, SyncPushMixin
+from admin_sync.protocol import LoadDumpProtocol
 
-from .models import Base, Detail, Tag
+from .models import Base, Detail, Tag, MissingNaturalKey, MissingNaturalKeyProtocol
 
 
-class SyncUserAdmin(SyncMixin, UserAdmin):
-    pass
+class SyncUserAdmin(SyncModelAdmin, UserAdmin):
+    def admin_sync_show_inspect(self) -> bool:
+        return True
 
 
-class BaseModelAdmin(SyncMixin):
+class BaseModelAdmin(SyncPushMixin):
     pass
 
 
 class DetailProtocol(LoadDumpProtocol):
     def collect(self, data) -> Iterable[Model]:
-        parents = []
         c = self.collector_class(collect_related=True)
         c.collect(data)
-        for o in c.data:
-            if isinstance(o, Detail) and o.brother:
-                parents.append(o.brother)
-        return parents
+        return [o.brother for o in c.data if isinstance(o, Detail) and o.brother]
 
 
-class DetailModelAdmin(SyncMixin, VersionAdmin):
+class DetailModelAdmin(SyncPushMixin):
     protocol_class = DetailProtocol
 
 
 site.register(Base, BaseModelAdmin)
 site.register(Detail, DetailModelAdmin)
 site.register(Tag, SyncModelAdmin)
+site.register(MissingNaturalKey, SyncModelAdmin)
+site.register(MissingNaturalKeyProtocol, SyncModelAdmin)
 
 if os.environ.get("ADMIN_SYNC_REMOTE"):
     site.site_header = "AdminSync REMOTE"

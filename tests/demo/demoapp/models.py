@@ -7,6 +7,9 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+    def natural_key(self) -> type[str, ...]:
+        return (self.name,)
+
 
 class Base(models.Model):
     name = models.CharField(max_length=10)
@@ -29,6 +32,26 @@ class Detail(models.Model):
     name = models.CharField(max_length=10)
     brother = models.OneToOneField("self", blank=True, null=True, on_delete=models.CASCADE)
     extra = models.OneToOneField(Extra, blank=True, null=True, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
+class MissingNaturalKeyProtocol(models.Model):
+    name = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.name
+
+
+class MissingNaturalKeyManager(models.Manager):
+    def get_by_natural_key(self):
+        pass
+
+
+class MissingNaturalKey(models.Model):
+    name = models.CharField(max_length=10)
+    objects = MissingNaturalKeyManager()
 
     def __str__(self):
         return self.name

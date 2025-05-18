@@ -1,12 +1,11 @@
+from admin_extra_buttons.handlers import BaseExtraHandler
 from django.db.models import Model
 from django.http import HttpRequest
 
-from admin_extra_buttons.handlers import BaseExtraHandler
-
 
 def check_publish_permission(request: HttpRequest, obj: Model, handler: BaseExtraHandler) -> bool:
-    return handler.model_admin.check_publish_permission(request, obj)
+    return handler.model_admin.can_publish(request, obj)  # type: ignore[attr-defined]
 
 
-def check_sync_permission(request: HttpRequest, obj: Model, handler: BaseExtraHandler) -> bool:
-    return handler.model_admin.check_sync_permission(request, obj)
+def check_pull_permission(request: HttpRequest, obj: Model, handler: BaseExtraHandler) -> bool:
+    return handler.model_admin.can_pull(request, obj)  # type: ignore[attr-defined]
