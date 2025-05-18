@@ -31,7 +31,7 @@ help:
 
 clean:
 	# cleaning
-	@rm -fr dist '~build' .pytest_cache .coverage src/admin_sync.egg-info
+	@rm -fr dist '~build' .pytest_cache .coverage src/admin_sync.egg-info .tox
 	@find . -name __pycache__ -o -name .eggs | xargs rm -rf
 	@find . -name "*.pyc" -o -name ".DS_Store" -o -name "*.orig" -o -name "*.min.min.js" -o -name "*.min.min.css" -prune | xargs rm -rf
 
