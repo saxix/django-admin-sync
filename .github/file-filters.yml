@@ -15,6 +15,14 @@ changelog:
 mypy:
   - *python
   - 'mypy.ini'
+  - '.github/file-filters.yml'
+
+package:
+  - *python
+  - *dependencies
+  - '.github/workflows/lint.yml'
+  - '.github/file-filters.yml'
+
 
 run_tests:
   - *python
@@ -25,6 +33,7 @@ run_tests:
 lint:
   -  *python
   - 'pyproject.toml'
+  - '.github/workflows/lint.yml'
   - '.github/file-filters.yml'
 
 docs:
