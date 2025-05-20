@@ -33,6 +33,7 @@ run_tests:
 lint:
   -  *python
   - 'pyproject.toml'
+  - 'ruff.toml'
   - '.github/workflows/lint.yml'
   - '.github/file-filters.yml'
 
