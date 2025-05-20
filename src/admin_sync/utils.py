@@ -14,6 +14,7 @@ from .conf import config
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
+
     from .types import NaturalKeyModel
 
 signer = SimpleLazyObject(lambda: signing.TimestampSigner())

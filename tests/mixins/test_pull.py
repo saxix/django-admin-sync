@@ -2,25 +2,35 @@ from __future__ import annotations
 
 import re
 from typing import TYPE_CHECKING
+from unittest import mock
 
 import pytest
+from django.core.serializers.base import DeserializationError
 from django.urls import reverse
+
+from admin_sync.datastructures import SerializationResult
+from admin_sync.protocol import LoadDumpProtocol
 
 if TYPE_CHECKING:
     from django_webtest import DjangoTestApp
 
 
-def test_pull(app: DjangoTestApp, admin_user, monkeypatch, responses):
+@pytest.fixture
+def data(admin_user):
+    return LoadDumpProtocol().serialize([admin_user])
+
+
+def test_pull(app: DjangoTestApp, admin_user, monkeypatch, responses, data):
     responses.add(
         responses.POST,
         re.compile(r"http://remote/auth/user/.*/reply/"),
-        json={"status": "success", "records": 10, "size": 13},
+        json=SerializationResult(payload=data).as_dict(),
     )
     url = reverse("admin:auth_user_change", args=[admin_user.pk])
     res = app.get(url, user=admin_user)
     res = res.click(linkid="btn-pull")
     res = res.forms["sync-remote-pull"].submit()
-    assert str(list(res.context["messages"])[0]) == "Pulled 10 records"
+    assert str(list(res.context["messages"])[0]) == "Pulled 1 records"
 
 
 def test_pull_no_button(app: DjangoTestApp, user, monkeypatch, responses):
@@ -41,7 +51,7 @@ def test_pull_failure(app: DjangoTestApp, user, monkeypatch, responses):
     responses.add(
         responses.POST,
         re.compile(r"http://remote/auth/user/.*/reply/"),
-        json={"status": "error", "records": 0, "size": 13},
+        json=SerializationResult(message="error", status=200, payload="[]").as_dict(),
     )
     url = reverse("admin:auth_user_pull", args=[user.pk])
     res = app.post(url, user=user, expect_errors=True)
@@ -55,3 +65,17 @@ def test_pull_remote_exception(app: DjangoTestApp, user, monkeypatch, responses)
     res = app.post(url, user=user, expect_errors=True)
     assert res.status_code == 200
     assert str(list(res.context["messages"])[0]) == "Error"
+
+
+def test_pull_deserialization_exception(app: DjangoTestApp, user, monkeypatch, responses):
+    responses.add(
+        responses.POST,
+        re.compile(r"http://remote/auth/user/.*/reply/"),
+        status=200,
+        json=SerializationResult(message="error", status=200, payload="[]").as_dict(),
+    )
+    url = reverse("admin:auth_user_pull", args=[user.pk])
+    with mock.patch("admin_sync.protocol.LoadDumpProtocol.deserialize", side_effect=DeserializationError()):
+        res = app.post(url, user=user, expect_errors=True)
+        assert res.status_code == 200
+        assert str(list(res.context["messages"])[0]) == "Error processing received data (DeserializationError)"

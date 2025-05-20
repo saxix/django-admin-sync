@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class BaseCollector(abc.ABC):
     def __init__(self, collect_related: bool = True) -> None:
-        self.data: list[Model] | None = None
+        self.data: list[Model] = []
         self.cache: "dict[type, CacheEntry]" = {}
         self.models: set[Model] = set()
         self._visited: list[Model] = []

@@ -3,12 +3,26 @@
 {% block action-content %}
     {% if data %}
         <table>
-            {% for entry,value in data.items %}
-                <tr>
-                    <th>{{ entry }}</th>
-                    <td>{{ value }}</td>
-                </tr>
-            {% endfor %}
+            <tr>
+                <th>Status</th>
+                <td>{{ data.status }}</td>
+            </tr>
+            <tr>
+                <th>Message</th>
+                <td>{{ data.message }}</td>
+            </tr>
+            <tr>
+                <th>Details</th>
+                <td>{{ data.details }}</td>
+            </tr>
+            <tr>
+                <th>Size</th>
+                <td>{{ data.size }}</td>
+            </tr>
+            <tr>
+                <th>Records</th>
+                <td>{{ data.records }}</td>
+            </tr>
         </table>
         <input type="button" value="Back" onclick="location.href='..'">
     {% else %}

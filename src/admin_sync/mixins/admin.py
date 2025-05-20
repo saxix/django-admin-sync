@@ -1,54 +1,57 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from admin_extra_buttons.decorators import button, view
 from django.contrib import admin
-from django.core.checks import CheckMessage, Warning as Warn
-from django.http import HttpRequest, JsonResponse
+from django.core.checks import CheckMessage
+from django.core.checks import Warning as Warn
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from ..datastructures import AdminSyncPullDataResponse, AdminSyncPushDataResponse
 from ..perms import check_publish_permission, check_pull_permission
-from .publisher import PublishMixin
-from .puller import PullMixin
-from .receiver import ReceiveMixin
-from .replier import ReplierMixin
+from .pull import PullMixin
+from .push import PublishMixin
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from ..types import NaturalKeyModel  # noqa: F401
 
-class SyncPushMixin(PublishMixin, ReceiveMixin):
+
+class SyncPushMixin(PublishMixin):
     @button(permission=check_publish_permission)  # type: ignore[arg-type]
-    def publish(self, request, pk):
+    def publish(self, request: HttpRequest, pk: str) -> HttpResponse | None:
         """Send data To Remote"""
         return self.sync_publish(request, pk)
 
     @view(decorators=[csrf_exempt], http_basic_auth=False, login_required=False)  # type: ignore[arg-type]
-    def receive(self, request) -> JsonResponse:
+    def receive(self, request: HttpRequest) -> AdminSyncPushDataResponse:
         """Receive data sent using publish() event"""
         response = self._receive(request)
-        return JsonResponse(response.as_dict(), status=response.code)
+        return AdminSyncPushDataResponse(response, status=response.status)
 
 
-class SyncPullMixin(PullMixin, ReplierMixin):
+class SyncPullMixin(PullMixin):
     @button(permission=check_pull_permission)  # type: ignore[arg-type]
-    def pull(self, request, pk):
+    def pull(self, request: HttpRequest, pk: str) -> HttpResponse | None:
         """Pull data from Remote"""
         return self.sync_pull_data(request, pk)
 
     @view(decorators=[csrf_exempt], http_basic_auth=False, login_required=False)  # type: ignore[arg-type]
-    def reply(self, request: HttpRequest, natural_key: str) -> JsonResponse:
+    def reply(self, request: HttpRequest, natural_key: str) -> AdminSyncPullDataResponse | JsonResponse:
         """Respond to a pull request."""
         try:
             response = self._reply(request, natural_key)
-            return JsonResponse(response.as_dict(), status=response.code)
+            return AdminSyncPullDataResponse(response, status=response.status)
         except Exception as e:
             logger.exception(e)
             return JsonResponse({"message": "Unhandled Error", "code": 500}, status=500)
 
 
-class SyncModelAdmin(SyncPushMixin, SyncPullMixin, admin.ModelAdmin):
+class SyncModelAdmin(SyncPushMixin, SyncPullMixin, admin.ModelAdmin["NaturalKeyModel"]):
     def check(self, **kwargs: Any) -> list[CheckMessage]:
         errors = super().check(**kwargs)
         has_natural_key = hasattr(self.model, "natural_key")

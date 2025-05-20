@@ -8,7 +8,7 @@ from django.db.models import Model
 from admin_sync.mixins import SyncModelAdmin, SyncPushMixin
 from admin_sync.protocol import LoadDumpProtocol
 
-from .models import Base, Detail, Tag, MissingNaturalKey, MissingNaturalKeyProtocol
+from .models import Base, Detail, MissingNaturalKey, MissingNaturalKeyProtocol, Tag
 
 
 class SyncUserAdmin(SyncModelAdmin, UserAdmin):

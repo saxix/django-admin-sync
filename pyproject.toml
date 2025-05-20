@@ -33,7 +33,6 @@ dependencies = [
   "django-admin-extra-buttons>=2.1",
   "django-concurrency",
   "django-stubs",
-  "natural-keys>=2.1.1",
   "pytz>=2025.1",
   "requests",
 ]
@@ -41,9 +40,6 @@ dependencies = [
 [dependency-groups]
 dev = [
   "django-constance>=4.3.2",
-  #  "check-manifest",
-  #  "coverage>4.4",
-  #  "django-coverage-plugin>=3.1.0",
   "django-factory-boy",
   "django-webtest>=1.9.13",
   "freezegun",
@@ -107,3 +103,4 @@ max_supported_python = "3.13"
 
 [tool.uv]
 package = true
+no-sources = true

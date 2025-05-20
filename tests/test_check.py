@@ -1,6 +1,5 @@
+from demoapp.models import MissingNaturalKey, MissingNaturalKeyProtocol, Tag
 from django.contrib.auth.models import User
-
-from demoapp.models import Tag, MissingNaturalKey, MissingNaturalKeyProtocol
 
 
 def test_check(db):

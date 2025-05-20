@@ -10,7 +10,7 @@ from django.utils.module_loading import import_string
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from constance import LazyConfig  # type: ignore[import-untyped]
+    from constance import LazyConfig
     from django.http import HttpRequest
 
     type _S = LazySettings | LazyConfig
