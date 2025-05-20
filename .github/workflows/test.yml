@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        django: [ "5.2", "4.2", "3.2"]
+        django: [ "52", "42", "32"]
         python: [ "3.13", "3.12" ]
     env:
       CELERY_BROKER_URL: redis://redis:6379/0
@@ -73,7 +73,13 @@ jobs:
         run: tox run -vv --notest --skip-missing-interpreters false
 
       - name: Run test suite ${{ matrix.django }}-${{ matrix.python }}
-        run: tox run -- pytest --cov-report xml:coverage-${{ matrix.django }}.xml  --junit-xml=junit-${{ matrix.django }}.xml
+
+        run: |
+            tox run \
+              -e d${{ matrix.django }}-$(echo ${{ matrix.python }} | sed 's/\.//') \
+              -- pytest \
+                --cov-report xml:coverage-${{ matrix.django }}.xml  \
+                --junit-xml=junit-${{ matrix.django }}.xml
         env:
           DIFF_AGAINST: HEAD
           DJANGO: ${{ matrix.django }}
