@@ -78,7 +78,7 @@ jobs:
       - name: Run test suite ${{ matrix.django }}-${{ matrix.python }}
         run: tox run --skip-pkg-install
         env:
-          PYTEST_ADDOPTS: "-vv --durations=20"
+          PYTEST_ADDOPTS: "-vv --durations=20 --cov-report xml:coverage-${{ matrix.django }}.xml"
           DIFF_AGAINST: HEAD
           DJANGO: ${{ matrix.django }}
 
