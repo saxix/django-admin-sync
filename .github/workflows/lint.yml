@@ -64,6 +64,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ changes ]
     if: needs.changes.outputs.run_tests == 'true' || github.event.act
+    strategy:
+      fail-fast: false
+      matrix:
+        django: [ "52", "42", "32"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v2
@@ -73,4 +77,4 @@ jobs:
           python -m pip install --upgrade pip tox
       - name: Lint with flake8
         run: |
-          tox -e mypy
+          tox -e d${{ matrix.django }}-mypy
