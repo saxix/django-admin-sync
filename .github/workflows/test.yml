@@ -78,14 +78,15 @@ jobs:
       - name: Run test suite ${{ matrix.django }}-${{ matrix.python }}
         run: tox run --skip-pkg-install
         env:
-          PYTEST_ADDOPTS: "-vv --durations=20 --cov-report xml:coverage-${{ matrix.django }}.xml"
+          PYTEST_ADDOPTS: "-vv --durations=20 --cov-report xml:coverage-${{ matrix.django }}.xml  --junit-xml=junit-${{ matrix.django }}.xml"
           DIFF_AGAINST: HEAD
           DJANGO: ${{ matrix.django }}
 
-      - name: UUpload test results to Codecov
+      - name: Upload test results to Codecov
         uses: codecov/test-results-action@v1
         with:
           env_vars: OS
+          files: ./junit-*.xml
           flags: ${{ matrix.django }} ${{ matrix.python }}
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
