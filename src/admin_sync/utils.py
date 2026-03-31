@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
     from .types import NaturalKeyModel
 
-signer = SimpleLazyObject(lambda: signing.TimestampSigner())
+signer = SimpleLazyObject(lambda: signing.TimestampSigner())  # noqa: PLW0108
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 
 def test_check(db):
-    from demoapp.admin import site
+    from demoapp.admin import site  # noqa: PLC0415
 
     m1 = site._registry[Tag]
     assert [m.msg for m in m1.check()] == [

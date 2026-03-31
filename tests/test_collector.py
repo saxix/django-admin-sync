@@ -6,7 +6,7 @@ from admin_sync.collector import ForeignKeysCollector
 
 
 def test_collector(db):
-    from demoapp.factories import DetailFactory
+    from demoapp.factories import DetailFactory  # noqa: PLC0415
 
     d = DetailFactory(
         base__parent__parent=None,
@@ -29,7 +29,7 @@ def test_collector(db):
 
 
 def test_collector_traverse(db):
-    from demoapp.factories import BaseFactory, DetailFactory
+    from demoapp.factories import BaseFactory, DetailFactory  # noqa: PLC0415
 
     b = BaseFactory(parent=None)
     d = DetailFactory(
@@ -44,7 +44,7 @@ def test_collector_traverse(db):
 
 
 def test_collector_common_parent(db):
-    from demoapp.factories import BaseFactory, DetailFactory
+    from demoapp.factories import BaseFactory, DetailFactory  # noqa: PLC0415
 
     b = BaseFactory(parent=None)
     d1 = DetailFactory(base=b, extra=None, brother=None)
@@ -55,7 +55,7 @@ def test_collector_common_parent(db):
 
 
 def test_collector_o2o(db):
-    from demoapp.factories import BaseFactory, DetailFactory
+    from demoapp.factories import BaseFactory, DetailFactory  # noqa: PLC0415
 
     b = BaseFactory(parent=None)
     d0 = DetailFactory(base=b, extra=None, brother=None)
@@ -67,7 +67,7 @@ def test_collector_o2o(db):
 
 
 def test_collector_qs(db):
-    from demoapp.factories import GroupFactory, UserFactory
+    from demoapp.factories import GroupFactory, UserFactory  # noqa: PLC0415
 
     u = UserFactory()
     g = GroupFactory()
@@ -79,7 +79,7 @@ def test_collector_qs(db):
 
 
 def test_collector_add(db):
-    from demoapp.factories import GroupFactory, UserFactory
+    from demoapp.factories import GroupFactory, UserFactory  # noqa: PLC0415
 
     u = UserFactory()
     g = GroupFactory()

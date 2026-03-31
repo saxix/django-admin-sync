@@ -88,7 +88,7 @@ def get_group(name=None, permissions=None):
     return group
 
 
-class user_grant_permissions(ContextDecorator):  # noqa
+class user_grant_permissions(ContextDecorator):  # noqa: PLC0415
     caches = [
         "_group_perm_cache",
         "_user_perm_cache",
